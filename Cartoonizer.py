@@ -110,7 +110,7 @@ class CannyEdgeDetect:
                         5, 12, 15, 12, 5,
                         2, 4, 5, 4, 2,
                         4, 9, 12, 9, 4]
-        gaussian = 1.0 / 159 * np.reshape(gaussian, (5,5))
+        gaussian = 1.0 / sum(gaussian) * np.reshape(gaussian, (5,5))
         return scipy.signal.convolve(im, gaussian, mode='same')
 
     def normalize_magnitude(self, mag):
@@ -131,19 +131,66 @@ class CannyEdgeDetect:
         """ hysteresis edge tracking: keeps weak pixels that are direct neighbors to strong pixels. Improves line detection.
         :param weak: an image thresholded by the lower threshold, such that it includes all weak and strong pixels
         :param strong: an image thresholded by the higher threshold, such that it includes only strong pixels
-        """
+         """
+        weakOnly = weak - strong
         blurKernel = np.ones((3,3)) / 9
         strongSmeared = scipy.signal.convolve(strong, blurKernel, mode='same') > 0
+        strongWithWeakNeighbors = weak & strongSmeared  # this is your normal result. trying for more will be expensive
+
+        return strongWithWeakNeighbors
+
+        
+        weakNeighbors = strongWithWeakNeighbors ^ strong  #exclusive or
+        # now here's where we track along the current valid pixel
+        h, w = weak.shape[:2]
+        pts = np.transpose(np.nonzero(weakNeighbors))  # coordinates of front of lines to begin tracking: y, x
+        frontier = set([(y, x) for y, x in pts])
+        frontierWave = set()  # searching in waves makes our search a breadth-first search
+        explored = list()
+        directions = [-1, 0, 1]
+        jitter = []  # jitter = moving around center
+        for dy in directions:
+            for dx in directions:
+                if dx == dy == 0:  # don't add center point
+                    continue
+                jitter.append((dy, dx))
+        depth = 0
+        while frontier or frontierWave:
+            if not frontier:  # frontier is exhausted
+                frontier = frontierWave
+                frontierWave = set()  # start next wave
+                depth += 1
+                if depth >= min(h, w) / 2:  # if our line is bigger than a dimension in our image, then it's probably a runaway.
+                    print('depth', depth)
+                    break
+            fy, fx = frontier.pop()
+            explored.append((fy, fx))
+            # explore around point, add neighbor
+            for dy, dx in jitter:
+                y, x = dy + fy, dx + fx
+                if y == h or y == -1 or x == w or x == -1:  # skip pixels outside boundary
+                    continue
+                if weak[y, x] and (y, x) not in explored and (y, x) not in frontier:  # found an unexplored, connected weak pixel
+                    frontierWave.add((y, x))  # nothing will change if this point already existed in frontier
+        # now we've explored all the connected-to-strong lines. Next up, mark them on strongWithWeakNeighbors
+        print(len(explored))
+        ys = [y for y, x in explored]
+        xs = [x for y, x in explored]
+        strongWithWeakNeighbors[ys, xs] = True
+            
         # keep nearby weak pixels
-        return weak & strongSmeared  # keeps all the original strong 
+        return   strongWithWeakNeighbors # keeps all the original strong 
 
     def double_threshold(self, im):
         """ obtain two thresholds for determining weak and strong pixels. return two images, weak and strong,
         where strong contains only strong pixels, and weak contains both weak and strong
         """
         otsu = OtsuThresholdMethod(im)
-        highThresh = otsu.get_threshold_for_black_and_white()
-        lowThresh = 0.5 * highThresh
+##        highThresh = otsu.get_threshold_for_black_and_white()
+##        lowThresh = 0.5 * highThresh
+        lowThresh, highThresh = otsu.calculate_2_thresholds()
+        print('thresh ', highThresh)
+
         weakLines = im > lowThresh
         strongLines = im > highThresh
         return weakLines, strongLines
@@ -157,7 +204,7 @@ class CannyEdgeDetect:
         thinNormalMag = self.get_combined_thinned_image(mag, phi)
         weak, strong = self.double_threshold(thinNormalMag)
         cannyEdges = self.edge_tracking(weak, strong)
-        return cannyEdges, thinNormalMag
+        return cannyEdges, weak * 255
 
 
 if __name__ == '__main__':
