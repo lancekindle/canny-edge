@@ -11,7 +11,7 @@ import numpy as np
 
 class OtsuThresholdMethod(object):
 
-    def __init__(self, im, bins=256):
+    def __init__(self, im, speedup=1):
         """ initializes the Otsu method to argument image. Image is only analyzed as greyscale.
         since it assumes that image is greyscale, it will choose blue channel to analyze. MAKE SURE YOU PASS GREYSCALE
         choosing a bins # that's smaller than 256 will help speed up the image generation,
@@ -23,9 +23,11 @@ class OtsuThresholdMethod(object):
         images = [im]
         channels = [0]
         mask = None
+        bins = 256 / speedup
+        self.speedup = speedup  # you are binning using speedup; remember to scale up threshold by speedup
         self.L = bins  # L = number of intensity levels
         bins = [bins]
-        ranges = [0, 256]
+        ranges = [0, 256]  # range of pixel values. I've tried setting this to im.min() and im.max() but I get errors...
         self.hist = cv2.calcHist(images, channels, mask, bins, ranges)
 ##        h, w = im.shape[:2]
 ##        self.N = float(h * w)  # N = total # of pixels. use float so that percentage calculations also become float
@@ -66,7 +68,7 @@ class OtsuThresholdMethod(object):
         bestSigmaSpace = sigmaB == best
         locationOfBestThresholds = np.nonzero(bestSigmaSpace)
         coordinates = np.transpose(locationOfBestThresholds)
-        k1, k2 = coordinates[0]
+        k1, k2 = coordinates[0] * self.speedup
         return k1, k2
 
     def calculate_n_thresholds(self, n):
@@ -81,7 +83,7 @@ class OtsuThresholdMethod(object):
         bestSigmaSpace = sigmaBspace == maxSigma
         locationOfBestThresholds = np.nonzero(bestSigmaSpace)
         coordinates = np.transpose(locationOfBestThresholds)
-        return list(coordinates[0])  # all thresholds right there!
+        return list(coordinates[0] * self.speedup)  # all thresholds right there!
 
     def dimensionless_thresholds_generator(self, n, minimumThreshold=0):
         # ok ok, I gotta use a freaking recursive algorithm here. If self.L >= 1024, this will fail. Otherwise it should work fine
@@ -183,9 +185,9 @@ if __name__ == '__main__':
 
     for toneScale in [32, 16, 8, 4, 2]:  # 1 is the slowest (and most accurate) so we leave that one out
         n = 3  # means it'll be 4-tone image
-        otsu = OtsuThresholdMethod(im, 256 / toneScale)
+        otsu = OtsuThresholdMethod(im, toneScale)
         thresholds = otsu.calculate_n_thresholds(n)
-        thresholds = [t * toneScale for t in thresholds]
+        thresholds = [t for t in thresholds]
         clipThreshold = thresholds[1:] + [None]
         greyValues = [256 / n * (i + 1) for i in range(n)]
         nLevels = np.zeros(blue.shape, dtype=np.uint8)

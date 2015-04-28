@@ -185,10 +185,12 @@ class CannyEdgeDetect:
         """ obtain two thresholds for determining weak and strong pixels. return two images, weak and strong,
         where strong contains only strong pixels, and weak contains both weak and strong
         """
-        otsu = OtsuThresholdMethod(im)
+        otsu = OtsuThresholdMethod(im, 4)  # speedup of 4 keeps things pretty accurate but much faster
 ##        highThresh = otsu.get_threshold_for_black_and_white()
 ##        lowThresh = 0.5 * highThresh
-        lowThresh, highThresh = otsu.calculate_2_thresholds()
+##        lowThresh, highThresh = otsu.calculate_n_thresholds(2)
+##        forget, lowThresh, highThresh = otsu.calculate_n_thresholds(3)
+        nope, lowThresh, highThresh, tooHigh = otsu.calculate_n_thresholds(4)
         print('thresh ', highThresh)
 
         weakLines = im > lowThresh
