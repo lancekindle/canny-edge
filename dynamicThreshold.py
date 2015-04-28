@@ -11,16 +11,21 @@ import numpy as np
 
 class OtsuThresholdMethod(object):
 
-    def __init__(self, im):
-        """ initializes the Otsu method to argument image. """
+    def __init__(self, im, bins=256):
+        """ initializes the Otsu method to argument image. Image is only analyzed as greyscale.
+        since it assumes that image is greyscale, it will choose blue channel to analyze. MAKE SURE YOU PASS GREYSCALE
+        choosing a bins # that's smaller than 256 will help speed up the image generation,
+        BUT it will also mean a little more inaccurate tone-mapping.
+        You'll have to rescale the passed thresholds up to 256 in order to accurately map colors
+        """
         if not (im.max() <= 255 and im.min() >= 0):
             raise ValueError('image needs to be scaled 0-255, AND dtype=uint8')
         images = [im]
         channels = [0]
         mask = None
-        self.L = 256  # L = number of intensity levels
-        bins = [self.L]
-        ranges = [0, self.L]
+        self.L = bins  # L = number of intensity levels
+        bins = [bins]
+        ranges = [0, 256]
         self.hist = cv2.calcHist(images, channels, mask, bins, ranges)
 ##        h, w = im.shape[:2]
 ##        self.N = float(h * w)  # N = total # of pixels. use float so that percentage calculations also become float
@@ -62,9 +67,37 @@ class OtsuThresholdMethod(object):
         locationOfBestThresholds = np.nonzero(bestSigmaSpace)
         coordinates = np.transpose(locationOfBestThresholds)
         k1, k2 = coordinates[0]
-        print(k1, k2)
-        k1, k2 = int(k1), int(k2)
         return k1, k2
+
+    def calculate_n_thresholds(self, n):
+        shape = [self.L for i in range(n)]
+        sigmaBspace = np.zeros(shape)
+        thresholdGen = self.dimensionless_thresholds_generator(n)
+        for kThresholds in thresholdGen:
+            thresholds = [0] + kThresholds + [self.L - 1]
+            thresholdSpace = tuple(kThresholds)  # accessing a numpy array using the list gives us an array, rather than a point like we want
+            sigmaBspace[thresholdSpace] = self.between_classes_variance_given_thresholds(thresholds)
+        maxSigma = sigmaBspace.max()
+        bestSigmaSpace = sigmaBspace == maxSigma
+        locationOfBestThresholds = np.nonzero(bestSigmaSpace)
+        coordinates = np.transpose(locationOfBestThresholds)
+        return list(coordinates[0])  # all thresholds right there!
+
+    def dimensionless_thresholds_generator(self, n, minimumThreshold=0):
+        # ok ok, I gotta use a freaking recursive algorithm here. If self.L >= 1024, this will fail. Otherwise it should work fine
+        """ generates thresholds in a list """
+        if n == 1:
+            for threshold in range(minimumThreshold, self.L):
+                yield [threshold]
+        elif n > 1:
+            m = n - 1  # number of additional thresholds
+            for threshold in range(minimumThreshold, self.L - m):
+                moreThresholds = self.dimensionless_thresholds_generator(n - 1, threshold + 1)
+                for otherThresholds in moreThresholds:
+                    allThresholds = [threshold] + otherThresholds
+                    yield allThresholds
+        else:
+            raise ValueError('# of dimensions should be > 0:' + str(n))
 
     def between_classes_variance_given_thresholds(self, thresholds):
         numClasses = len(thresholds) - 1
@@ -132,10 +165,38 @@ class OtsuThresholdMethod(object):
 
 if __name__ == '__main__':
     filename = 'car.jpg'
-    im = cv2.imread(filename)
+    im = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
     otsu = OtsuThresholdMethod(im)
-    threshold = otsu.get_threshold_for_black_and_white()
-    blue = im[:, :, 0]  # just choose single channel
-    bw = blue >= threshold  # boolean black and white
-    cv2.imwrite('bw_car.jpg', bw * 255)  # multiply by 255 to create valid image range of 0-255
+##    threshold = otsu.get_threshold_for_black_and_white()
+##    blue = im[:, :, 0]  # just choose single channel
+    blue  = im  # since we loaded in as greyscale
+##    bw = blue >= threshold  # boolean black and white
+##    cv2.imwrite('bw_car.jpg', bw * 255)  # multiply by 255 to create valid image range of 0-255
+    
+    k1, k2 = otsu.calculate_2_thresholds()
+    grey = ((blue >= k1) & (blue < k2)) * 128
+    white = (blue >= k2) * 255
+    threeLevels = np.zeros(blue.shape, dtype=np.uint8)
+    threeLevels += grey
+    threeLevels += white
+    cv2.imwrite('car_3grey.jpg', threeLevels)
 
+    for toneScale in [32, 16, 8, 4, 2]:  # 1 is the slowest (and most accurate) so we leave that one out
+        n = 3  # means it'll be 4-tone image
+        otsu = OtsuThresholdMethod(im, 256 / toneScale)
+        thresholds = otsu.calculate_n_thresholds(n)
+        thresholds = [t * toneScale for t in thresholds]
+        clipThreshold = thresholds[1:] + [None]
+        greyValues = [256 / n * (i + 1) for i in range(n)]
+        nLevels = np.zeros(blue.shape, dtype=np.uint8)
+        for i in range(len(thresholds)):
+            k1 = thresholds[i]
+            gval = greyValues[i]
+            bw = (blue >= k1)
+            k2 = clipThreshold[i]
+            if k2:
+                bw &= (blue < k2)
+            grey = bw * gval
+            nLevels += grey
+        cv2.imwrite('car_' + str(n + 1) + 'grey' + '_speedup_' + str(toneScale) + '.jpg', nLevels)
+    
