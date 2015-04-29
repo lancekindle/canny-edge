@@ -9,6 +9,101 @@ import numpy as np
 # a paper that explains Otsu's method and helps explain n-levels of thresholding
 # http://www.iis.sinica.edu.tw/page/jise/2001/200109_01.pdf
 
+class OtsuFastThreshold(object):
+
+    def __init__(self, im):
+        self.im = im
+        h, w = im.shape[:2]
+        N = float(h * w)  # N = number of pixels in image
+                # cast N as float, because we need float answers when dividing by N
+        L = 256  # L = number of intensity levels
+        images = [im]
+        channels = [0]
+        mask = None
+        bins = [L]
+        ranges = [0, L]  # range of pixel values. I've tried setting this to im.min() and im.max() but I get errors...
+        hist = cv2.calcHist(images, channels, mask, bins, ranges)  # hist is a numpy array of arrays. So accessing hist[0]
+                # gives us an array, which messes with calculating omega. So we convert np array to list of ints
+        hist = [int(h) for h in hist]  # used to be floats. I don't think we need floats
+        omegas, mus, self.muT = self.calculate_omegas_and_mus_from_histogram(hist)
+        print(omegas)
+        self.histPyramid = self.binary_reduce_pyramid(hist)
+        self.omegaPyramid = self.binary_reduce_pyramid(omegas)
+        self.muPyramid = self.binary_reduce_pyramid(mus)
+##            for i in range(0, len(hist), 2):
+##                print(i, len(hist))
+##                reducedHist.append(hist[i] + hist[i+1])
+            
+
+    def calculate_omegas_and_mus_from_histogram(self, hist):
+        L = len(hist)  # L = number of intensity levels
+        N = float(sum(hist))  # N = number of pixels in image
+                # cast N as float, because we need float answers when dividing by N
+        probabilityLevels = [hist[i] / N for i in range(L)]  # percentage of pixels at each intensity level i
+                                                                                                               # => P_i
+        self.probabilityLevels = probabilityLevels
+        meanLevels = [i * probabilityLevels[i] for i in range(L)]  # mean level of pixels at intensity level i
+                                                                                                          # => i * P_i
+        self.meanLevels = meanLevels
+        # is meanLevels really mean? or is it a weighting of percentage of pixels....
+        ptotal = 0.0
+        omegas = []  # sum of probability levels up to k
+        for i in range(L):
+            ptotal += probabilityLevels[i]
+            omegas.append(ptotal)
+        mtotal = 0.0
+        mus = []
+        for i in range(L):
+            mtotal += meanLevels[i]
+            mus.append(mtotal)
+        muT = float(mtotal)  # muT is the total mean levels.
+        return omegas, mus, muT
+
+    def binary_reduce_pyramid(self, data):
+        """ from a list (data), creates a pyramid representing increasingly reduced versions of the data.
+        at the end of the pyramid, the last element will be of length 2. To access an element of length N,
+        simply access it at x, where x = -log(N, 2). Or, in other words, N = 2 ^ (-x)
+        """
+        L = len(data)
+        reductions = int(math.log(L, 2))  # should be 8 (if we assume picture is 256 bins)
+##        pyramid = np.array([None for i in range(reductions)])
+        pyramid = []
+        for i in range(reductions):  # generate reduced versions of histogram, omegas, and mus
+            pyramid.append(data)
+##            pyramid[i] = data
+            binaryReducedData = [data[i] + data[i+1] for i in range(0, L, 2)]
+            data = binaryReducedData
+            L = L / 2  # update L to reflect the length of the new histogram, omegas, and mus
+        return pyramid
+
+    def binary_reduce_to_pyramid(self, hist, omegas, mus):
+        L = len(hist)
+        reductions = int(math.log(L, 2))
+        histPyramid = []
+        omegaPyramid = []
+        muPyramid = []
+        for i in range(reductions):
+            self.histMatrix[i] = hist
+            reducedHist = [hist[i] + hist[i + 1] for i in range(0, L, 2)]
+            hist = reducedHist  # collapse a list to half its size, combining the two collpased numbers into one
+            #
+            self.omegaMatrix[i] = omegas
+            reducedOmegas = [omegas[i + 1] for i in range(0, L, 2)]  # because omega represents the sum of pixel probabilities up to that level,
+                    # we collapse by choosing the higher percentage
+                    # could also write as  = omegas[1::2]
+            omegas = reducedOmegas
+            #
+            self.muMatrix[i] = mus
+            reducedMus = [mus[i] + mus[i + 1] for i in range(0, L, 2)]
+            mus = reducedMus
+            #
+            L = L / 2  # update L to reflect the length of the new histogram, omegas, and mus
+
+    def setup(self):
+        pass
+
+
+
 class OtsuThresholdMethod(object):
 
     def __init__(self, im, speedup=1):
@@ -83,6 +178,7 @@ class OtsuThresholdMethod(object):
         bestSigmaSpace = sigmaBspace == maxSigma
         locationOfBestThresholds = np.nonzero(bestSigmaSpace)
         coordinates = np.transpose(locationOfBestThresholds)
+        print(list(coordinates[0]))
         return list(coordinates[0] * self.speedup)  # all thresholds right there!
 
     def dimensionless_thresholds_generator(self, n, minimumThreshold=0):
@@ -166,28 +262,33 @@ class OtsuThresholdMethod(object):
 
 
 if __name__ == '__main__':
-    filename = 'car.jpg'
+    filename = 'boat.jpg'
+    dot = filename.index('.')
+    prefix = filename[:dot]
     im = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+    otsu2 = OtsuFastThreshold(im)
     otsu = OtsuThresholdMethod(im)
+    raise
 ##    threshold = otsu.get_threshold_for_black_and_white()
 ##    blue = im[:, :, 0]  # just choose single channel
     blue  = im  # since we loaded in as greyscale
 ##    bw = blue >= threshold  # boolean black and white
 ##    cv2.imwrite('bw_car.jpg', bw * 255)  # multiply by 255 to create valid image range of 0-255
     
-    k1, k2 = otsu.calculate_2_thresholds()
-    grey = ((blue >= k1) & (blue < k2)) * 128
-    white = (blue >= k2) * 255
-    threeLevels = np.zeros(blue.shape, dtype=np.uint8)
-    threeLevels += grey
-    threeLevels += white
-    cv2.imwrite('car_3grey.jpg', threeLevels)
+##    k1, k2 = otsu.calculate_2_thresholds()
+##    grey = ((blue >= k1) & (blue < k2)) * 128
+##    white = (blue >= k2) * 255
+##    threeLevels = np.zeros(blue.shape, dtype=np.uint8)
+##    threeLevels += grey
+##    threeLevels += white
+##    cv2.imwrite('car_3grey.jpg', threeLevels)
 
-    for toneScale in [32, 16, 8, 4, 2]:  # 1 is the slowest (and most accurate) so we leave that one out
+    for toneScale in [64, 32, 16, 8, 4, 2, 1]:  # 1 is the slowest (and most accurate) so we leave that one out
         n = 3  # means it'll be 4-tone image
         otsu = OtsuThresholdMethod(im, toneScale)
         thresholds = otsu.calculate_n_thresholds(n)
-        thresholds = [t for t in thresholds]
+        thresholds = [t for t in thresholds]  # change it from a numpy array to a list
+##        print(thresholds)
         clipThreshold = thresholds[1:] + [None]
         greyValues = [256 / n * (i + 1) for i in range(n)]
         nLevels = np.zeros(blue.shape, dtype=np.uint8)
@@ -200,5 +301,5 @@ if __name__ == '__main__':
                 bw &= (blue < k2)
             grey = bw * gval
             nLevels += grey
-        cv2.imwrite('car_' + str(n + 1) + 'grey' + '_speedup_' + str(toneScale) + '.jpg', nLevels)
+        cv2.imwrite(prefix + '_' + str(n + 1) + 'grey' + '_speedup_' + str(toneScale) + '.jpg', nLevels)
     

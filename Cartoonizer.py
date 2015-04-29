@@ -6,6 +6,22 @@ import math
 import numpy as np
 from dynamicThreshold import OtsuThresholdMethod
 
+class SimpleEdgeDetect:
+
+    def smooth_image(self, im):
+        gaussian = [2, 4, 5, 4, 2,
+                        4, 9, 12, 9, 4,
+                        5, 12, 15, 12, 5,
+                        2, 4, 5, 4, 2,
+                        4, 9, 12, 9, 4]
+        gaussian = 1.0 / sum(gaussian) * np.reshape(gaussian, (5,5))
+        return scipy.signal.convolve(im, gaussian, mode='same')
+
+    def find_edges(self, im):
+        smoothed = self.smooth_image(im)
+        edges = im - smoothed
+        return edges
+
 
 class CannyEdgeDetect:
 
@@ -218,7 +234,13 @@ if __name__ == '__main__':
 ##
 ##    edges = canny.find_edges(blue)
 ##    cv2.imwrite('edges.jpg', edges * 255)
-
+##    filename = 'car.jpg'
+##    car = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+##    edger = SimpleEdgeDetect()
+##    edgesCar = edger.find_edges(car)
+##    cv2.imwrite('edgesCar.jpg', edgesCar)
+##    
+##    raise
     import os
     canny = CannyEdgeDetect()
     cwd = os.getcwd()
@@ -237,54 +259,3 @@ if __name__ == '__main__':
         edgesFinal, uncanny = canny.find_edges(im4canny)
         cv2.imwrite(f, edgesFinal * 255)  # we are already in the outputDir
         cv2.imwrite(f.replace('.jpg', '_2.jpg'), uncanny)
-    
-
-
-##smoothed = canny.smooth_image(blue)
-##y, x = canny.sobel_filter(smoothed)
-##y, x = canny.scharr_filter(smoothed)
-##x = canny.sobel_x(smoothed)
-##y = canny.sobel_y(smoothed)
-##phi = canny.sobel_phi(x, y)
-##mag = canny.sobel_mag(x, y)  # of course... mag is scaled crazy high. We need to scale back down to 255
-
-##normalMag = np.array(canny.normalize_magnitude(mag), dtype=np.uint8)
-
-##otsu = OtsuThresholdMethod(normalMag)
-##thresh = otsu.get_threshold_for_black_and_white()
-##gradientBW = mag > thresh
-##cv2.imwrite('gradientBW.jpg', gradientBW * 255)
-##cv2.imwrite('strongLines.jpg', strongLines * 255)
-##cv2.imwrite('weakLines.jpg', weakLines * 255)
-##cv2.imwrite('cannyImage.jpg', cannyImage)
-##cv2.imwrite('strongNeighbors.jpg', strongNeighbors * 255)
-
-
-
-
-##realDiagF = thinDiagF * normalMag
-##realDiagB = thinDiagB * normalMag
-##realVert = thinVert * normalMag
-##realHoriz = thinHoriz * normalMag
-##
-##cv2.imwrite('realVert.jpg', 255 * realVert)
-##cv2.imwrite('realHoriz.jpg', 255 * realHoriz)
-##cv2.imwrite('realDiagB.jpg', 255 * realDiagB)
-##cv2.imwrite('realDiagF.jpg', 255 * realDiagF)
-
-##def threshold_experiment(im):
-##    for thresh in range(0, 20, 1):
-##        test = im > thresh
-##        cv2.imwrite('images/' + str(thresh) + '.jpg', 255 * test)
-
-##cv2.imwrite('thinVert.jpg', 255 * thinVert)
-##cv2.imwrite('thinHoriz.jpg', 255 * thinHoriz)
-##cv2.imwrite('thinDiagB.jpg', 255 * thinDiagB)
-##cv2.imwrite('thinDiagF.jpg', 255 * thinDiagF)
-
-#cv2.imwrite('.jpg', 255 * )
-
-##cv2.imwrite('diagForward.jpg', 255 * diagForward)  # multiply by 255 to convert to common image type
-##cv2.imwrite('diagBackward.jpg', 255 * diagBackward)
-##cv2.imwrite('horizontal.jpg', 255 * horizontal)
-##cv2.imwrite('vertical.jpg', 255 * vertical)
