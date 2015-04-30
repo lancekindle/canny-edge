@@ -9,9 +9,93 @@ import numpy as np
 # a paper that explains Otsu's method and helps explain n-levels of thresholding
 # http://www.iis.sinica.edu.tw/page/jise/2001/200109_01.pdf
 
+class OtsuMultithreshold(object):
+
+    def calculate_n_thresholds(self, n):
+        shape = [self.L for i in range(n)]
+        sigmaBspace = np.zeros(shape)
+        thresholdGen = self.dimensionless_thresholds_generator(n)
+        for kThresholds in thresholdGen:
+            thresholds = [0] + kThresholds + [self.L - 1]
+            thresholdSpace = tuple(kThresholds)  # accessing a numpy array using the list gives us an array, rather than a point like we want
+            sigmaBspace[thresholdSpace] = self.between_classes_variance_given_thresholds(thresholds)
+        maxSigma = sigmaBspace.max()
+        bestSigmaSpace = sigmaBspace == maxSigma
+        locationOfBestThresholds = np.nonzero(bestSigmaSpace)
+        coordinates = np.transpose(locationOfBestThresholds)
+        print(list(coordinates[0]))
+        return list(coordinates[0] * self.speedup)  # all thresholds right there!
+
+    def jitter_thresholds_generator(self, n, thresholds, maxThresh):
+        """ given the current thresholds, will return threshold generator that "jitters" around by 2 integers to either side
+        of the original threshold. This is part of the scaling up
+        I think maxThresh can be 256. Because of how I've structured it...
+        """
+        thresholds = np.array(thresholds)  # turn it into an array for quick addition or subtraction
+        minimumThresholds = list(thresholds - 2)
+        maximumThresholds = list(thresholds + 2)
+        if minimumThresholds[0] < 0:  # we have to adjust some to make sure none are negative, and don't overlap
+            minimumThresholds[0] = 0
+            priorVal = 0
+            for i in range(1, len(minimumThresholds)):  # ensure next value in list is a minimum of 1 greater than prior value
+                val = minimumThresholds[i]
+                val = max(val, priorVal + 1)
+                minimumThresholds[i] = val
+                priorVal = val
+        if maximumThresholds[-1] > maxThresh:
+            maximumThresholds[-1] = maxThresh
+            for i in range():  # iterate backwards, ensuring tha each previous threshold is at least 1 less than the last
+                pass  # fill in later
+        return self.bounded_thresholds_generator(n, minimumThresholds, maximumThresholds)
+
+    def bounded_thresholds_generator(self, n, minimumThresholds, maximumThresholds):
+        # ok ok, I gotta use a freaking recursive algorithm here. If self.L >= 1024, this will fail. Otherwise it should work fine
+        """ generates n thresholds in a chain (a list). Each threshold will be greater than the previous threshold, such that no
+        threshold will be less than or equal to the chain's previous threshold. Note that we assume the function is passed in
+        valid and nonconflicting minimum and maximum thresholds.
+        """
+        minThresh = minimumThresholds[0]
+        maxThresh = maximumThresholds[0]
+        if n == 1:
+            for threshold in range(minThresh, maxThresh):
+                yield [threshold]
+        elif n > 1:
+            minimumThresholds = minimumThresholds[1:]  # clip limiting threshold list so that next in line is available
+            maximumThresholds = maximumThresholds[1:]  # for next threshold generator
+            """ there should be a function called before this that ensures the max and mins do not conflict. """
+##            siblingMax = maximumThresholds[-1]  # the max of the last threshold is always the largest! So we need to make
+##                    # sure that we don't accidentally force it out of range
+##            m = n - 1  # number of additional sibling thresholds to generate
+##            chainMax = siblingMax - m  # threshold max, given the number of thresholds left in the list to generate
+##            maxThresh = min(maxThresh, chainMax)  # of course, we need to stay within our own maximum, too
+            for threshold in range(minThresh, maxThresh):
+                minimumThresholds[0] = threshold + 1  # make sure that the next threshold in list will be greater
+                moreThresholds = self.dimensionless_thresholds_generator(n - 1, minimumThresholds, maximumThresholds)
+                for otherThresholds in moreThresholds:
+                    allThresholds = [threshold] + otherThresholds
+                    yield allThresholds
+        else:
+            raise ValueError('# of dimensions should be > 0:' + str(n))
+
+    def between_classes_variance_given_thresholds(self, thresholds):
+        numClasses = len(thresholds) - 1
+        sigma = 0
+        for i in range(numClasses):
+            k1 = thresholds[i]
+            k2 = thresholds[i+1]
+            sigma += self.between_thresholds_variance(k1, k2)
+        return sigma
+
+    def between_thresholds_variance(self, k1, k2):  # to be used in calculating between class variances only!
+        omega = self.omegas[k2] - self.omegas[k1]
+        mu = self.mus[k2] - self.mus[k1]
+        muT = self.muT
+        return omega * ( (mu - muT)**2)
+
+
 class OtsuFastThreshold(object):
 
-    def __init__(self, im):
+    def load_image(self, im):
         self.im = im
         h, w = im.shape[:2]
         N = float(h * w)  # N = number of pixels in image
@@ -24,28 +108,34 @@ class OtsuFastThreshold(object):
         ranges = [0, L]  # range of pixel values. I've tried setting this to im.min() and im.max() but I get errors...
         hist = cv2.calcHist(images, channels, mask, bins, ranges)  # hist is a numpy array of arrays. So accessing hist[0]
                 # gives us an array, which messes with calculating omega. So we convert np array to list of ints
-        hist = [int(h) for h in hist]  # used to be floats. I don't think we need floats
-        omegas, mus, self.muT = self.calculate_omegas_and_mus_from_histogram(hist)
-        print(omegas)
-        self.histPyramid = self.binary_reduce_pyramid(hist)
-        self.omegaPyramid = self.binary_reduce_pyramid(omegas)
-        self.muPyramid = self.binary_reduce_pyramid(mus)
-##            for i in range(0, len(hist), 2):
-##                print(i, len(hist))
-##                reducedHist.append(hist[i] + hist[i+1])
-            
+        hist = [int(h) for h in hist]
+        histPyr, omegaPyr, muPyr = self.create_histogram_and_stats_pyramids(hist)
+        self.histPyramid = histPyr
+        self.omegaPyramid = omegaPyr
+        self.muPyramid = muPyr
+        
+    def create_histogram_and_stats_pyramids(self, hist):
+        """ expects hist to be a single list of numbers (no numpy array)
+        """
+        L = len(hist)
+        reductions = int(math.log(L, 2))
+        histPyramid = []
+        omegaPyramid = []
+        muPyramid = []
+        for i in range(reductions):
+            histPyramid.append(hist)
+            reducedHist = [hist[i] + hist[i + 1] for i in range(0, L, 2)]
+            hist = reducedHist  # collapse a list to half its size, combining the two collpased numbers into one
+            L = L / 2  # update L to reflect the length of the new histogram
+        for hist in histPyramid:
+            omegas, mus, muT = self.calculate_omegas_and_mus_from_histogram(hist)
+            omegaPyramid.append(omegas)
+            muPyramid.append(mus)
+        return histPyramid, omegaPyramid, muPyramid
 
     def calculate_omegas_and_mus_from_histogram(self, hist):
-        L = len(hist)  # L = number of intensity levels
-        N = float(sum(hist))  # N = number of pixels in image
-                # cast N as float, because we need float answers when dividing by N
-        probabilityLevels = [hist[i] / N for i in range(L)]  # percentage of pixels at each intensity level i
-                                                                                                               # => P_i
-        self.probabilityLevels = probabilityLevels
-        meanLevels = [i * probabilityLevels[i] for i in range(L)]  # mean level of pixels at intensity level i
-                                                                                                          # => i * P_i
-        self.meanLevels = meanLevels
-        # is meanLevels really mean? or is it a weighting of percentage of pixels....
+        probabilityLevels, meanLevels = self.calculate_histogram_pixel_stats(hist)
+        L = len(probabilityLevels)
         ptotal = 0.0
         omegas = []  # sum of probability levels up to k
         for i in range(L):
@@ -59,49 +149,16 @@ class OtsuFastThreshold(object):
         muT = float(mtotal)  # muT is the total mean levels.
         return omegas, mus, muT
 
-    def binary_reduce_pyramid(self, data):
-        """ from a list (data), creates a pyramid representing increasingly reduced versions of the data.
-        at the end of the pyramid, the last element will be of length 2. To access an element of length N,
-        simply access it at x, where x = -log(N, 2). Or, in other words, N = 2 ^ (-x)
-        """
-        L = len(data)
-        reductions = int(math.log(L, 2))  # should be 8 (if we assume picture is 256 bins)
-##        pyramid = np.array([None for i in range(reductions)])
-        pyramid = []
-        for i in range(reductions):  # generate reduced versions of histogram, omegas, and mus
-            pyramid.append(data)
-##            pyramid[i] = data
-            binaryReducedData = [data[i] + data[i+1] for i in range(0, L, 2)]
-            data = binaryReducedData
-            L = L / 2  # update L to reflect the length of the new histogram, omegas, and mus
-        return pyramid
+    def calculate_histogram_pixel_stats(self, hist):
+        L = len(hist)  # L = number of intensity levels
+        N = float(sum(hist))  # N = number of pixels in image
+        probabilityLevels = [hist[i] / N for i in range(L)]  # percentage of pixels at each intensity level i
+                # => P_i
+        meanLevels = [i * probabilityLevels[i] for i in range(L)]  # mean level of pixels at intensity level i
+        return probabilityLevels, meanLevels                            # => i * P_i
 
-    def binary_reduce_to_pyramid(self, hist, omegas, mus):
-        L = len(hist)
-        reductions = int(math.log(L, 2))
-        histPyramid = []
-        omegaPyramid = []
-        muPyramid = []
-        for i in range(reductions):
-            self.histMatrix[i] = hist
-            reducedHist = [hist[i] + hist[i + 1] for i in range(0, L, 2)]
-            hist = reducedHist  # collapse a list to half its size, combining the two collpased numbers into one
-            #
-            self.omegaMatrix[i] = omegas
-            reducedOmegas = [omegas[i + 1] for i in range(0, L, 2)]  # because omega represents the sum of pixel probabilities up to that level,
-                    # we collapse by choosing the higher percentage
-                    # could also write as  = omegas[1::2]
-            omegas = reducedOmegas
-            #
-            self.muMatrix[i] = mus
-            reducedMus = [mus[i] + mus[i + 1] for i in range(0, L, 2)]
-            mus = reducedMus
-            #
-            L = L / 2  # update L to reflect the length of the new histogram, omegas, and mus
-
-    def setup(self):
+    def get(self):
         pass
-
 
 
 class OtsuThresholdMethod(object):
@@ -124,10 +181,6 @@ class OtsuThresholdMethod(object):
         bins = [bins]
         ranges = [0, 256]  # range of pixel values. I've tried setting this to im.min() and im.max() but I get errors...
         self.hist = cv2.calcHist(images, channels, mask, bins, ranges)
-##        h, w = im.shape[:2]
-##        self.N = float(h * w)  # N = total # of pixels. use float so that percentage calculations also become float
-        # I don't want to weight the threshold by how many blacks there are. Therefore....
-##        self.hist[0] = 1  # give black 1 pixel only
         self.N = float(sum(self.hist[:]))
         self.probabilityLevels = [self.hist[i] / self.N for i in range(self.L)]  # percentage of pixels at each intensity level i
                                                                                                                # => P_i
@@ -136,7 +189,6 @@ class OtsuThresholdMethod(object):
         for i in range(self.L):
             s += float(self.probabilityLevels[i])
             self.omegas.append(s)
-##        self.probabilityThreshold = [sum(self.probabilityLevels[:i]) for i in range(self.L)]  # probability of all pixels <= i
         self.meanLevels = [i * self.hist[i] / self.N for i in range(self.L)]  # mean level of pixels at intensity level i
                                                                                                           # => i * P_i
         s = 0.0
@@ -145,12 +197,8 @@ class OtsuThresholdMethod(object):
             s += float(self.meanLevels[i])
             self.mus.append(s)
         self.muT = s
-        
-##        self.meanThreshold = [sum(self.meanLevels[:i]) for i in range(self.L)]  # mean of all pixels <= i
         self.totalMeanLevel = sum(self.meanLevels)
         self.classVariances = [self.variance_at_threshold(k) for k in range(self.L)]  # sigmaB for each threshold level 0- L
-##        self.classVariances = [self.between_class_variance(k) for k in range(self.L)]  # between class variance
-        # both class variance calculations are very similar
 
     def calculate_2_thresholds(self):
         sigmaB = np.zeros((self.L, self.L))  # 2d space representing all choices of k1, k2 thresholds
@@ -232,13 +280,6 @@ class OtsuThresholdMethod(object):
             return 0
         return numerator / denominator
 
-##    def variance_between_thresholds(self, k1, k2):
-##        omega_K = self.probabilityThreshold[k2] - self.probabilityThreshold[k1]
-##        mu_K = (self.meanThreshold[k2] - self.meanThreshold[k1]) / self.probabilityThreshold[k1]
-##
-##    def get_2_thresholds(self):
-##        
-
     def probability_at_threshold(self, k):
         """ return sum percentage of all pixels at and below threshold level k.
         == omega == w(k)
@@ -254,27 +295,17 @@ class OtsuThresholdMethod(object):
         threshold = self.classVariances.index(maxSigmaB)
         return threshold
 
-##    def get_n_thresholds(self, n):
-##        omegas = []
-##        mus = []
-##        for i in range(n):
-##            omegas.append(
-
 
 if __name__ == '__main__':
     filename = 'boat.jpg'
     dot = filename.index('.')
     prefix = filename[:dot]
     im = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
-    otsu2 = OtsuFastThreshold(im)
+    otsu2 = OtsuFastThreshold()
+    otsu2.load_image(im)
     otsu = OtsuThresholdMethod(im)
-    raise
-##    threshold = otsu.get_threshold_for_black_and_white()
-##    blue = im[:, :, 0]  # just choose single channel
     blue  = im  # since we loaded in as greyscale
-##    bw = blue >= threshold  # boolean black and white
-##    cv2.imwrite('bw_car.jpg', bw * 255)  # multiply by 255 to create valid image range of 0-255
-    
+
 ##    k1, k2 = otsu.calculate_2_thresholds()
 ##    grey = ((blue >= k1) & (blue < k2)) * 128
 ##    white = (blue >= k2) * 255
@@ -282,7 +313,7 @@ if __name__ == '__main__':
 ##    threeLevels += grey
 ##    threeLevels += white
 ##    cv2.imwrite('car_3grey.jpg', threeLevels)
-
+    
     for toneScale in [64, 32, 16, 8, 4, 2, 1]:  # 1 is the slowest (and most accurate) so we leave that one out
         n = 3  # means it'll be 4-tone image
         otsu = OtsuThresholdMethod(im, toneScale)
