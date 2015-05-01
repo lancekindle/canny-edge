@@ -9,7 +9,130 @@ import numpy as np
 # a paper that explains Otsu's method and helps explain n-levels of thresholding
 # http://www.iis.sinica.edu.tw/page/jise/2001/200109_01.pdf
 
+class ThresholdHunter(object):
+    """ hunt around given thresholds in a small space to look for a better threshold
+    """
+
+    def __init__(self, omegas, mus, deviate=2):
+        self.sigmaB = BetweenClassVariance(omegas, mus)
+        self.bins = self.sigmaB.bins  # used to be called L
+        self.deviate = deviate  # hunt 2 (or other amount) to either side of thresholds
+    
+
+    def find_best_thresholds_around_original(self, originalThresholds):
+        """ this is the one you were last typing up. Given guesses for best threshold, explore to either side of the threshold
+        and return the best result.
+        """
+        shape = [self.deviate * 2 + 1] * len(originalThresholds)
+        sigmaSpace = np.zeros(shape)
+        for thresholds, offsets in self._jitter_thresholds_and_offsets_generator(originalThresholds, 0, self.bins -  1):
+            # even though we access from -2 to 2, our sigma space will not overwrite previous results.
+            # just remember when getting coordinates to subtract 2 from each offset to get the true threshold offset
+            #ARRRRRRRRRGGGGGHHHHH!!!!!!!!!!!!!!
+            # this coordinate thing does not work well with offsets. OK, so if I do a -2 across the board when getting the
+            # final results, that means that a best offset of 0 will suddenly look like -2. So that's not going to work properly
+            # what WILL work is adding 2 to the offsets before putting it into the sigmaSpace. So that way, -2 WILL
+            # return the offsets back to their original value
+            offsets = offsets + self.deviate  # set offset range 0->5  (0 -> 2*offset + 1)
+            sigmaSpace[tuple(offsets)] = self.sigmaB.get_total_variance(thresholds)
+        bestSigmaSpace = sigmaSpace == sigmaSpace.max()
+        bestOffsets = np.nonzero(bestSigmaSpace) - self.deviate  # actual offsets are sigmaSpace - deviate due to how we stored them.
+        bestOffsets = np.transpose(bestOffsets)       # transpose to match shape....?
+        bestThresholds = np.array(originalThresholds) + bestOffsets
+        return list(bestThresholds)
+
+    def _jitter_threshold_and_offsets_generator(self, thresholds, min_, max_):
+        pastThresh = thresholds[0]
+        if len(thresholds) == 1:
+            for offset in range(-self.deviate, self.deviate + 1):  # -2 through +2
+                thresh = pastThresh + offset
+                if thresh < min_ or thresh > max_:
+                    continue  # skip since we are conflicting with bounds
+                yield [thresh], [offset]
+        else:
+            thresholds = thresholds[1:]  # new threshold without our threshold included
+            m = len(thresholds)  # number of threshold left to generate in chain
+            for offset in range(-self.deviate, self.deviate + 1):
+                thresh = pastThresh + offset
+                if thresh < min_ or thresh + m > max_:  # verify we don't use the same value as the previous threshold
+                    continue                         # and also verify our current threshold will not push the last threshold past max
+                for otherThresholds, otherOffsets in self.jitter_offsets_generator(thresholds, thresh + 1, max_):
+                    yield [thresh] + otherThresholds, [offset] + others
+
+
+class BetweenClassVariance(object):
+
+    def __init__(self, omegas, mus):
+        self.omegas = omegas
+        self.mus = mus
+        self.bins = len(mus)  # number of bins / luminosity choices
+        self.muTotal = sum(mus)
+
+    def get_total_variance(self, thresholds):
+        """ function will pad the thresholds argument with minimum and maximum thresholds to calculate
+        between class variance
+        """
+        thresholds = [0] + thresholds + [self.bins - 1]
+        numClasses = len(thresholds) - 1
+        sigma = 0
+        for i in range(numClasses):
+            k1 = thresholds[i]
+            k2 = thresholds[i+1]
+            sigma += self._between_thresholds_variance(k1, k2)
+        return sigma
+
+    def _between_thresholds_variance(self, k1, k2):  # to be used in calculating between class variances only!
+        omega = self.omegas[k2] - self.omegas[k1]
+        mu = self.mus[k2] - self.mus[k1]
+        muT = self.muTotal
+        return omega * ( (mu - muT)**2)
+
+
 class OtsuMultithreshold(object):
+
+    def fast_calculate_k_thresholds_better(self, k):
+        start = self.get_starting_pyramid_index(k)
+        self.bins = len(omegaPyramid[start])
+        thresholds = [self.bins / 2 for i in range(k)]  # first-guess thresholds will be middle of road, allowing hunting
+                    # algorithm full range of searching
+        deviate = self.bins / 2
+        for i in range(start, len(omegaPyramid)):
+            omegas = self.omegaPyramid[i]
+            mus = self.muPyramid[i]
+            hunter = ThresholdHunter(omegas, mus, deviate)
+            thresholds = hunter.find_best_thresholds_around_original(thresholds)
+            threshPyramid.append(thresholds)
+            # now we scale-up thresholds and set deviate for hunting in limited area. Logic / experiments suggest that you
+            # only need to deviate by up to 2 when scaling up the previous thresholds by 2.
+            deviate = 2
+            thresholds = list(np.array(thresholds) * 2)
+        return thresholds
+    
+    def get_starting_pyramid_index(k):
+        """ given the number of thresholds, return the minium starting index
+        of pyramid to use in calculating thresholds
+        """
+        return math.ceil( math.log(n + 1, 2) )
+
+
+class OtsuMultithreshold_OLD(object):
+
+    def calculate_thresholds_at_pyramid_level(self, i):
+        shape = [5 for i in range(n)]  # 5 since that's the size of each iteration
+        # instead of storing the actual threshold as the coordinate, we store the threshold offset as the coordinate
+        # offset of -2 is the 0th index, +2 is the 4th index
+        sigmaBspace = np.zeros(shape)
+        thresholdGen = self.jitter_thresholds_generator(thresholds, self.L)
+        for kThresholds in thresholdGen:
+            thresholds = [0] + kThresholds + [self.L - 1]
+            thresholdSpace = tuple(kThresholds)  # accessing a numpy array using the list gives us an array, rather than a point like we want
+            sigmaBspace[thresholdSpace] = self.between_classes_variance_given_thresholds(thresholds)
+        maxSigma = sigmaBspace.max()
+        bestSigmaSpace = sigmaBspace == maxSigma
+        locationOfBestThresholds = np.nonzero(bestSigmaSpace)
+        coordinates = np.transpose(locationOfBestThresholds)
+        print(list(coordinates[0]))
+        return list(coordinates[0] * self.speedup)  # all thresholds right there!
 
     def calculate_n_thresholds(self, n):
         shape = [self.L for i in range(n)]
@@ -26,26 +149,48 @@ class OtsuMultithreshold(object):
         print(list(coordinates[0]))
         return list(coordinates[0] * self.speedup)  # all thresholds right there!
 
-    def jitter_thresholds_generator(self, n, thresholds, maxThresh):
+    def calculate_first_run_thresholds(self, n):
+        """ n = number of thresholds . In order for this to work, you need to define several variables
+        self.L = length of bins / histogram / omegas
+        self.omegas = corresponding omegas from the omegaPyramid
+        self.mus = corresponding mus from the muPyramid
+        """
+        shape = [self.L for i in range(n)]
+        sigmaBspace = np.zeros(shape)
+        thresholdGen = self.dimensionless_thresholds_generator(n)
+        for kThresholds in thresholdGen:
+            thresholds = [0] + kThresholds + [self.L - 1]
+            thresholdSpace = tuple(kThresholds)  # accessing a numpy array using the list gives us an array, rather than a point like we want
+            sigmaBspace[thresholdSpace] = self.between_classes_variance_given_thresholds(thresholds)
+        maxSigma = sigmaBspace.max()
+        bestSigmaSpace = sigmaBspace == maxSigma
+        locationOfBestThresholds = np.nonzero(bestSigmaSpace)
+        coordinates = np.transpose(locationOfBestThresholds)
+        print(list(coordinates[0]))
+        return list(coordinates[0] * self.speedup)  # all thresholds right there!
+
+    
+
+    def jitter_thresholds_generator(self, thresholds, jitter=2):
         """ given the current thresholds, will return threshold generator that "jitters" around by 2 integers to either side
         of the original threshold. This is part of the scaling up
-        I think maxThresh can be 256. Because of how I've structured it...
+        maxThresh should be the length of the current histogram. (or the length of the current omegas or mus)
+        If finding the first thresholds, generate a list of [0, 0, 0...0] thresholds, and set jitter = maxThresh
         """
-        thresholds = np.array(thresholds)  # turn it into an array for quick addition or subtraction
-        minimumThresholds = list(thresholds - 2)
-        maximumThresholds = list(thresholds + 2)
-        if minimumThresholds[0] < 0:  # we have to adjust some to make sure none are negative, and don't overlap
-            minimumThresholds[0] = 0
-            priorVal = 0
-            for i in range(1, len(minimumThresholds)):  # ensure next value in list is a minimum of 1 greater than prior value
-                val = minimumThresholds[i]
-                val = max(val, priorVal + 1)
-                minimumThresholds[i] = val
-                priorVal = val
-        if maximumThresholds[-1] > maxThresh:
-            maximumThresholds[-1] = maxThresh
-            for i in range():  # iterate backwards, ensuring tha each previous threshold is at least 1 less than the last
-                pass  # fill in later
+        maxThresh = self.L
+        thresholds = np.array(thresholds)  # turn it into an array for quick addition and subtraction
+        minThresholds = list(thresholds - jitter)
+        maxThresholds = list(thresholds + jitter)
+        # verify that first threshold starts >= 0, and proceeding thresholds are successively greater
+        adjustedMin = -1
+        for i in range(n):
+            adjustedMin = max(minThresholds[i], adjustedMax + 1)
+            minThresholds[i] = adjustedMin
+        # verify that last max threshold <= maxThresh, and preceeding thresholds are successively smaller
+        adjustedMax = maxThresh + 1
+        for i in range(n - 1, -1, -1):
+            adjustedMax = min(maxThresholds[i], adjustedMax - 1)
+            maxThresholds[i] = adjustedMax
         return self.bounded_thresholds_generator(n, minimumThresholds, maximumThresholds)
 
     def bounded_thresholds_generator(self, n, minimumThresholds, maximumThresholds):
@@ -63,34 +208,14 @@ class OtsuMultithreshold(object):
             minimumThresholds = minimumThresholds[1:]  # clip limiting threshold list so that next in line is available
             maximumThresholds = maximumThresholds[1:]  # for next threshold generator
             """ there should be a function called before this that ensures the max and mins do not conflict. """
-##            siblingMax = maximumThresholds[-1]  # the max of the last threshold is always the largest! So we need to make
-##                    # sure that we don't accidentally force it out of range
-##            m = n - 1  # number of additional sibling thresholds to generate
-##            chainMax = siblingMax - m  # threshold max, given the number of thresholds left in the list to generate
-##            maxThresh = min(maxThresh, chainMax)  # of course, we need to stay within our own maximum, too
             for threshold in range(minThresh, maxThresh):
-                minimumThresholds[0] = threshold + 1  # make sure that the next threshold in list will be greater
+                minimumThresholds[0] = max(minimumThresholds[0], threshold + 1)  # next threshold in list must be greater
                 moreThresholds = self.dimensionless_thresholds_generator(n - 1, minimumThresholds, maximumThresholds)
                 for otherThresholds in moreThresholds:
                     allThresholds = [threshold] + otherThresholds
                     yield allThresholds
         else:
             raise ValueError('# of dimensions should be > 0:' + str(n))
-
-    def between_classes_variance_given_thresholds(self, thresholds):
-        numClasses = len(thresholds) - 1
-        sigma = 0
-        for i in range(numClasses):
-            k1 = thresholds[i]
-            k2 = thresholds[i+1]
-            sigma += self.between_thresholds_variance(k1, k2)
-        return sigma
-
-    def between_thresholds_variance(self, k1, k2):  # to be used in calculating between class variances only!
-        omega = self.omegas[k2] - self.omegas[k1]
-        mu = self.mus[k2] - self.mus[k1]
-        muT = self.muT
-        return omega * ( (mu - muT)**2)
 
 
 class OtsuFastThreshold(object):
