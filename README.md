@@ -1,2 +1,2 @@
-# cel-shader
-cartoonize an input image with bold lines, and a small color palette
+# canny-edge
+Implement Canny Edge Detection in Python using numpy and several other scientific libraries.
