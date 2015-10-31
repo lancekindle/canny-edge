@@ -120,8 +120,7 @@ class CannyEdgeDetect:
         return normalized
 
     def smooth_image(self, im):
-##        gaussian = self.get_2d_gaussian_filter(5)
-        gaussian = [2,  4,  5,  4, 2
+        gaussian = [2,  4,  5,  4, 2,
                     4,  9, 12,  9, 4,
                     5, 12, 15, 12, 5,
                     2,  4,  5,  4, 2,
@@ -202,13 +201,7 @@ class CannyEdgeDetect:
         where strong contains only strong pixels, and weak contains both weak and strong
         """
         otsu = OtsuThresholdMethod(im, 4)  # speedup of 4 keeps things pretty accurate but much faster
-##        highThresh = otsu.get_threshold_for_black_and_white()
-##        lowThresh = 0.5 * highThresh
-##        lowThresh, highThresh = otsu.calculate_n_thresholds(2)
-##        forget, lowThresh, highThresh = otsu.calculate_n_thresholds(3)
-        nope, lowThresh, highThresh, tooHigh = otsu.calculate_n_thresholds(4)
-        print('thresh ', highThresh)
-
+        _, lowThresh, highThresh, tooHigh = otsu.calculate_n_thresholds(4)
         weakLines = im > lowThresh
         strongLines = im > highThresh
         return weakLines, strongLines
@@ -226,21 +219,6 @@ class CannyEdgeDetect:
 
 
 if __name__ == '__main__':
-##    filename = 'car.jpg'
-##    imOriginal = cv2.imread(filename)
-##
-##    canny = CannyEdgeDetect()
-##    blue = imOriginal[:, :, 0]
-##
-##    edges = canny.find_edges(blue)
-##    cv2.imwrite('edges.jpg', edges * 255)
-##    filename = 'car.jpg'
-##    car = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
-##    edger = SimpleEdgeDetect()
-##    edgesCar = edger.find_edges(car)
-##    cv2.imwrite('edgesCar.jpg', edgesCar)
-##    
-##    raise
     import os
     canny = CannyEdgeDetect()
     cwd = os.getcwd()
@@ -251,11 +229,11 @@ if __name__ == '__main__':
     os.chdir(cwd)
     os.chdir(outputDir)
     for f in images:
-        if '.jpg' not in f:  # it's some other file or folder
+        if '.jpg' not in f:
             continue
         print('reading', f)
         filepath = os.path.join(cwd, inputDir, f)
         im4canny = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
         edgesFinal, uncanny = canny.find_edges(im4canny)
-        cv2.imwrite(f, edgesFinal * 255)  # we are already in the outputDir
+        cv2.imwrite(f, edgesFinal * 255)
         cv2.imwrite(f.replace('.jpg', '_2.jpg'), uncanny)
