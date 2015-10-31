@@ -235,5 +235,5 @@ if __name__ == '__main__':
         filepath = os.path.join(cwd, inputDir, f)
         im4canny = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
         edgesFinal, uncanny = canny.find_edges(im4canny)
-        cv2.imwrite(f, edgesFinal * 255)
-        cv2.imwrite(f.replace('.jpg', '_2.jpg'), uncanny)
+        cv2.imwrite(f.replace('.jpg', '_strong_only.jpg'), edgesFinal * 255)
+        cv2.imwrite(f.replace('.jpg', '_weak_included.jpg'), uncanny)
