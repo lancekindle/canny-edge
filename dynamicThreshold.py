@@ -25,12 +25,20 @@ class OtsuThresholdMethod(object):
         channels = [0]
         mask = None
         bins = 256 / speedup
+        if int(bins) != bins:
+            raise ValueError('speedup must be integer that evenly divides 256')
+        bins = int(bins)
         self.speedup = speedup  # you are binning using speedup; remember to scale up threshold by speedup
         self.L = bins  # L = number of intensity levels
         bins = [bins]
         ranges = [0, 256]  # range of pixel values. I've tried setting this to im.min() and im.max() but I get errors...
         self.hist = cv2.calcHist(images, channels, mask, bins, ranges)
         self.N = float(sum(self.hist[:]))
+        self.probabilityLevels = []
+        for i in range(self.L):
+            p_i = self.hist[i] / self.N
+            self.probabilityLevels.append(p_i)
+
         self.probabilityLevels = [self.hist[i] / self.N for i in range(self.L)]  # percentage of pixels at each intensity level i
                                                                                                                # => P_i
         s = 0.0
@@ -75,12 +83,11 @@ class OtsuThresholdMethod(object):
         bestSigmaSpace = sigmaBspace == maxSigma
         locationOfBestThresholds = np.nonzero(bestSigmaSpace)
         coordinates = np.transpose(locationOfBestThresholds)
-        print(list(coordinates[0]))
-        return list(coordinates[0] * self.speedup)  # all thresholds right there!
+        return list(coordinates[0] * self.speedup)
 
     def dimensionless_thresholds_generator(self, n, minimumThreshold=0):
-        # ok ok, I gotta use a freaking recursive algorithm here. If self.L >= 1024, this will fail. Otherwise it should work fine
-        """ generates thresholds in a list """
+        """ generates thresholds in a list. Due to its recursive nature, this
+        will fail only if self.L > 1024 (which won't happen normally) """
         if n == 1:
             for threshold in range(minimumThreshold, self.L):
                 yield [threshold]
@@ -103,7 +110,8 @@ class OtsuThresholdMethod(object):
             sigma += self.between_thresholds_variance(k1, k2)
         return sigma
 
-    def between_thresholds_variance(self, k1, k2):  # to be used in calculating between class variances only!
+    def between_thresholds_variance(self, k1, k2):
+        """ to be used in calculating between class variance only! """
         omega = self.omegas[k2] - self.omegas[k1]
         mu = self.mus[k2] - self.mus[k1]
         muT = self.muT
@@ -114,7 +122,7 @@ class OtsuThresholdMethod(object):
         omega = self.omegas[k]
         mu = self.mus[k]
         muT = self.totalMeanLevel
-        if omega == 0 or omega == 1:  # result will be 0 if true
+        if omega == 0 or omega == 1:
             return 0
         return omega * (1 - omega) * (mu / omega - (muT - mu) / (1 - omega) )**2
 
@@ -125,7 +133,6 @@ class OtsuThresholdMethod(object):
         numerator = (self.totalMeanLevel * omega - mu)**2
         denominator = omega * (1 - omega)
         if denominator == 0:
-##            print('denom = 0')
             return 0
         return numerator / denominator
 
@@ -153,21 +160,11 @@ if __name__ == '__main__':
     otsu = OtsuThresholdMethod(im)
     blue  = im  # since we loaded in as greyscale
 
-##    k1, k2 = otsu.calculate_2_thresholds()
-##    grey = ((blue >= k1) & (blue < k2)) * 128
-##    white = (blue >= k2) * 255
-##    threeLevels = np.zeros(blue.shape, dtype=np.uint8)
-##    threeLevels += grey
-##    threeLevels += white
-##    cv2.imwrite('car_3grey.jpg', threeLevels)
-    
     for toneScale in [64, 32, 16, 8, 4, 2, 1]:  # 1 is the slowest (and most accurate) so we leave that one out
         n = 2  # means it'll be 4-tone image
         otsu = OtsuThresholdMethod(im, toneScale)
         thresholds = otsu.calculate_n_thresholds(n)
         thresholds = [t for t in thresholds]  # change it from a numpy array to a list
-##        print(thresholds)
-##        print(thresholds)
         clipThreshold = thresholds[1:] + [None]
         greyValues = [256 / n * (i + 1) for i in range(n)]
         nLevels = np.zeros(blue.shape, dtype=np.uint8)
