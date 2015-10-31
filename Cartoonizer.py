@@ -9,11 +9,11 @@ from dynamicThreshold import OtsuThresholdMethod
 class SimpleEdgeDetect:
 
     def smooth_image(self, im):
-        gaussian = [2, 4, 5, 4, 2,
-                        4, 9, 12, 9, 4,
-                        5, 12, 15, 12, 5,
-                        2, 4, 5, 4, 2,
-                        4, 9, 12, 9, 4]
+        gaussian = [2,  4,  5,  4, 2,
+                    4,  9, 12,  9, 4,
+                    5, 12, 15, 12, 5,
+                    2,  4,  5,  4, 2,
+                    4,  9, 12,  9, 4]
         gaussian = 1.0 / sum(gaussian) * np.reshape(gaussian, (5,5))
         return scipy.signal.convolve(im, gaussian, mode='same')
 
@@ -35,21 +35,21 @@ class CannyEdgeDetect:
     def scharr_filter(self, im):
         # this filter was really crappy
         y = [-3, -10, -3,
-                0,  0,   0,
-              +3, +10, +3]
-        x = [-3, 0,  +3,
-              -10, 0, +10,
-               -3,  0,  +3]
+              0,   0,  0,
+             +3, +10, +3]
+        x = [ -3, 0,  +3
+             -10, 0, +10,
+              -3, 0,  +3 ]
         return self._apply_filter(im, y, x)
     
     # because of how gradients are calculated, a gradient in the x direction = a vertical line.
     def sobel_filter(self, im):
         y = [-1, -2, -1,
-               0,  0,  0,
-              +1, +2, +1]
+              0,  0,  0,
+             +1, +2, +1]
         x = [-1, 0, +1,
-               -2, 0, +2,
-               -1, 0, +1]
+             -2, 0, +2,
+             -1, 0, +1]
         return self._apply_filter(im, y, x)
 
     def get_gradient_magnitude_and_angle(self, im):
@@ -121,11 +121,11 @@ class CannyEdgeDetect:
 
     def smooth_image(self, im):
 ##        gaussian = self.get_2d_gaussian_filter(5)
-        gaussian = [2, 4, 5, 4, 2,
-                        4, 9, 12, 9, 4,
-                        5, 12, 15, 12, 5,
-                        2, 4, 5, 4, 2,
-                        4, 9, 12, 9, 4]
+        gaussian = [2,  4,  5,  4, 2
+                    4,  9, 12,  9, 4,
+                    5, 12, 15, 12, 5,
+                    2,  4,  5,  4, 2,
+                    4,  9, 12,  9, 4]
         gaussian = 1.0 / sum(gaussian) * np.reshape(gaussian, (5,5))
         return scipy.signal.convolve(im, gaussian, mode='same')
 
