@@ -62,13 +62,26 @@ function strip_alpha_channel(img) {
     // sets an image's alpha channel to opaque
     var opaque = 255;
     var alpha_index = 3;
-    var rgba = 4;  // number of colors in image
-    while (alpha_index < img.data.length) {
-        img.data[alpha_index] = opaque;
-        alpha_index += rgba;
+    var num_colors = 4;  //rgba (4 colors in image)
+    for (i = alpha_index; i < img.data.length; i += num_colors) {
+        img.data[i] = opaque;
     }
 }
 
-function to_greyscale(img) {
-    
+function get_greyscale(img) {
+    img = copy_image(img);
+    var alpha_index = 3;
+    var num_colors = 4;
+    data = img.data;
+    var scaling = [0.299, 0.587, 0.114];
+    for (i = 0; i < data.length; i += num_colors) {
+         var r = data[i + 0];
+         var g = data[i + 1];
+         var b = data[i + 2];
+         greyscale = r * scaling[0] + g * scaling[1] + b * scaling[2];
+         data[i + 0] = greyscale;
+         data[i + 1] = greyscale;
+         data[i + 2] = greyscale;
+    }
+    return img;
 }
