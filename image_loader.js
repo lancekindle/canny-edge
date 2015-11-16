@@ -1,35 +1,75 @@
 window.canvas = document.getElementById('canvas');
 window.ctx = canvas.getContext('2d');
+window.grey_canvas = document.getElementById('canvas-grey');
 
-// function requires an element: <input type="file" id="imgLoader">
-// loads image into window.orig_im, then draws image on variable
-// window.canvas. Then captures imgdata as window.im (pure uint8 data)
 document.getElementById('imgLoader').onchange = function handleImage(e) {
+    /*function requires an element: <input type="file" id="imgLoader">
+     loads image into window.orig_im, draws image on window.canvas. Then
+     captures imgdata as window.pix (pure uint8 data)
+     */
     var reader = new FileReader();
     reader.onload = function (event) { console.log('going to load image');
         orig_im = new Image();
         orig_im.src = event.target.result;
         orig_im.onload = function () {
-            drawImageOntoCanvas(canvas, orig_im);
+            draw_img_on_canvas(canvas, orig_im);
             window.orig_im = get_canvas_img(canvas);
+            strip_alpha_channel(window.orig_im);
             window.pix = window.orig_im.data;
         }
     }
     reader.readAsDataURL(e.target.files[0]);
 }
 
-function drawImageOntoCanvas(canvas, image) {
-    //resizes canvas internally so that full image is displayed. However, the
-    //visual size of canvas within browser is not modified.
+auto_load_image();  // FOR TESTING ONLY (have to run python2 -m SimpleHTTPServer to activate
+
+function auto_load_image() {
+    /*auto-loads image from file to assist in coding 
+     */
+    orig_im = new Image();
+    var src = "car.jpg";
+    orig_im.src = src;
+    orig_im.onload = function() {
+        draw_raw_img_on_canvas(window.canvas, orig_im);
+        window.im = orig_im;
+        window.orig_im = get_canvas_img(canvas);
+        window.pix = window.orig_im.data;
+        step1_greyscale(window.orig_im);
+    }
+}
+
+function step1_greyscale(img) {
+    grey = get_greyscale(img);
+    draw_img_on_canvas(window.grey_canvas, grey);
+}
+
+function draw_img_on_canvas(canvas, image) {
+    /*resizes canvas internally so that full image is displayed. However, the
+     visual size of canvas within browser is not modified.
+     use this fxn to draw any image that you've modified from the original.
+     */
     canvas.width = image.width;
     canvas.height = image.height;
     ctx = canvas.getContext('2d');
-    ctx.drawImage(image, 0, 0);
+    ctx.putImageData(image, 0, 0);
+}
+
+function draw_raw_img_on_canvas(canvas, raw_image) {
+    /*This is used only once; to draw the img after being loaded from file.
+     sizes canvas internally so that full image is displayed. However, the
+     visual size of canvas within browser is not modified.
+     */
+    canvas.width = raw_image.width;
+    canvas.height = raw_image.height;
+    ctx = canvas.getContext('2d');
+    ctx.drawImage(raw_image, 0, 0);
+
 }
 
 function get_canvas_img(canvas) {
-    // assumes that canvas.width & canvas.height have been set to dimensions of 
-    // loaded image. Will return the full image data
+    /*assumes that canvas.width & canvas.height have been set to dimensions of 
+    loaded image. Will return the full image data
+     */
     ctx = canvas.getContext('2d');
     w = canvas.width;
     h = canvas.height;
@@ -37,8 +77,9 @@ function get_canvas_img(canvas) {
 } 
 
 function new_image(im) {
-    // create blank image with same dimensions as im (or window.orig_im if no
-    // image passed)
+    /*create blank image with same dimensions as im (or window.orig_im if no
+     image passed)
+     */
     if (im == undefined) {
         im = window.orig_im
     }
@@ -58,6 +99,10 @@ function copy_image(img) {
     return copy;
 }
 
+window.blur_kernel = [1/9, 1/9, 1/9,
+                   1/9, 1/9, 1/9,
+                   1/9, 1/9, 1/9,];
+
 function strip_alpha_channel(img) {
     // sets an image's alpha channel to opaque
     var opaque = 255;
@@ -69,6 +114,7 @@ function strip_alpha_channel(img) {
 }
 
 function get_greyscale(img) {
+    // return a grayscaled copy of img
     img = copy_image(img);
     var alpha_index = 3;
     var num_colors = 4;
