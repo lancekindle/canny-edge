@@ -39,8 +39,14 @@ function auto_load_image() {
 }
 
 function step1_greyscale(img) {
-    grey = get_greyscale(img);
+    window.grey = get_greyscale(img);
     draw_img_on_canvas(window.grey_canvas, grey);
+    step2_blur(grey);
+}
+
+function step2_blur(img) {
+    blurred = convolve(img, blur_kernel);
+    draw_img_on_canvas(document.getElementById('canvas-3'), blurred);
 }
 
 function draw_img_on_canvas(canvas, image) {
@@ -99,9 +105,63 @@ function copy_image(img) {
     return copy;
 }
 
-window.blur_kernel = [1/9, 1/9, 1/9,
-                   1/9, 1/9, 1/9,
-                   1/9, 1/9, 1/9,];
+window.blur_kernel = [1, 1, 1,
+                      1, 1, 1,
+                      1, 1, 1,];
+
+function convolve(img, kernel) {
+    /* convolve a kernel with an image, returning a new image with the same
+     * dimensions post-convolution.
+     * Kernel must be a 3x3 kernel
+     */
+    new_img = copy_image(img);
+    sum = 9; // TODO: sum all numbers from kernel
+    var pixel;
+    for (x = 0; x < img.width; x++) {
+        for (y = 0; y < img.height; y++) {
+            pixel = 0;
+            k = -1;  // index of kernel
+            //get pixels in 3x3 square around center pixel, multiply by
+            //corresponding kernel value
+            pixel += kernel[++k] * (get_pixel(img, x - 1, y - 1) || get_pixel(img, x, y));
+            pixel += kernel[++k] * (get_pixel(img, x, y - 1) || get_pixel(img, x, y));
+            pixel += kernel[++k] * (get_pixel(img, x + 1, y - 1) || get_pixel(img, x, y));
+
+            pixel += kernel[++k] * (get_pixel(img, x - 1, y) || get_pixel(img, x, y));
+            pixel += kernel[++k] * (get_pixel(img, x, y) || get_pixel(img, x, y));
+            pixel += kernel[++k] * (get_pixel(img, x + 1, y) || get_pixel(img, x, y));
+
+            pixel += kernel[++k] * (get_pixel(img, x - 1, y + 1) || get_pixel(img, x, y));
+            pixel += kernel[++k] * (get_pixel(img, x, y + 1) || get_pixel(img, x, y));
+            pixel += kernel[++k] * (get_pixel(img, x + 1, y + 1) || get_pixel(img, x, y));
+            pixel /= sum;
+            set_pixel(new_img, x, y, pixel);
+        }
+    }
+    return new_img;
+}
+
+function get_pixel(img, x, y) {
+    // this assumes that img is now greyscale. Return Red component of pixel at
+    // coordinates (x,y)
+    var num_colors = 4;
+    var w = img.width;
+    x *= num_colors;
+    y *= num_colors * w;
+    return img.data[x + y];
+}
+
+function set_pixel(img, x, y, value) {
+    // this assumes that img is now greyscale. Sets Red, Green, & Blue
+    // components of pixel at coordinates (x,y) to value
+    var num_colors = 4;
+    var w = img.width;
+    x *= num_colors;
+    y *= num_colors * w;
+    img.data[x + y] = value;
+    img.data[x + 1 + y] = value;
+    img.data[x + 2 + y] = value;
+}
 
 function strip_alpha_channel(img) {
     // sets an image's alpha channel to opaque
