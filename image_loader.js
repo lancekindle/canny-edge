@@ -43,15 +43,15 @@ function step1_greyscale(img) {
 }
 
 function step2_blur(img) {
-    var blurred = convolve(img, kernel.gaussian);
+    var blurred = convolve(img, KERNEL.gaussian);
     draw_img_on_canvas(document.getElementById('canvas-3'), blurred);
     step3_edge_detect_xy(blurred);
 }
 
 function step3_edge_detect_xy(img) {
     var no_normalize = 1;  // sobel kernel's auto-normalize
-    var edge_x = convolve(img, kernel.sobel_x, no_normalize);
-    var edge_y = convolve(img, kernel.sobel_y, no_normalize);
+    var edge_x = convolve(img, KERNEL.sobel_x, no_normalize);
+    var edge_y = convolve(img, KERNEL.sobel_y, no_normalize);
     draw_img_on_canvas(document.getElementById('canvas-edge-x'), edge_x);
     draw_img_on_canvas(document.getElementById('canvas-edge-y'), edge_y);
 }
@@ -113,7 +113,9 @@ function copy_image(img) {
     return copy;
 }
 
-window.kernel = {
+window.NUM_COLORS = 4;
+
+window.KERNEL = {
 
     'blur': [1, 1, 1,
              1, 1, 1,
@@ -126,6 +128,14 @@ window.kernel = {
     'sobel_x': [-1, 0, +1, 
                 -2, 0, +2,
                 -1, 0, +1],
+
+    'sobel_y_reverse': [+1, +2, +1,
+                         0,  0,  0,
+                        -1, -2, -1],
+
+    'sobel_x_reverse': [+1, 0, -1, 
+                        +2, 0, -2,
+                        +1, 0, -1],
 
     'gaussian': [2,  4,  5,  4, 2,
                  4,  9, 12,  9, 4,
@@ -178,23 +188,35 @@ function get_pixel(img, x, y) {
     /* this assumes that img is now greyscale. Return Red component of pixel at
      * coordinates (x,y)
      */
-    var num_colors = 4,
-        w = img.width;
-    x *= num_colors;
-    y *= num_colors * w;
+    x *= NUM_COLORS;
+    y *= NUM_COLORS * img.width;
     return img.data[x + y];
 }
 
-function set_pixel(img, x, y, value) {
+function set_pixel(img, x, y, luminosity) {
     // this assumes that img is now greyscale. Sets Red, Green, & Blue
     // components of pixel at coordinates (x,y) to value
-    var num_colors = 4,
-        w = img.width;
-    x *= num_colors;
-    y *= num_colors * w;
+    x *= NUM_COLORS;
+    y *= NUM_COLORS * img.width;
     img.data[x + y] = value;
     img.data[x + 1 + y] = value;
     img.data[x + 2 + y] = value;
+}
+
+function set_pixel_color(img, x, y, color_indices, luminosity) {
+    /* set a specific color-indices @ x, y to given luminosity. So [1], 255
+     * would set the pixel at x,y to rgb values: (0, 255, 0).
+     * [0,1], 128 would set the rbg values @x,y to (128, 128, 0)
+     */
+    x *= NUM_COLORS;
+    y *= NUM_COLORS * img.width;
+    color_indices.forEach(function(i) {
+        if ((i == 0) || (i == 1) || (i ==2)) {
+            img.data[x + y + i] = luminosity;
+        } else {
+            console.log('error: set_pixel_color accessed color outside rgb');
+        }
+    });
 }
 
 function strip_alpha_channel(img) {
