@@ -49,8 +49,9 @@ function step2_blur(img) {
 }
 
 function step3_edge_detect_xy(img) {
-    var edge_x = convolve(img, kernel.sobel_x);
-    var edge_y = convolve(img, kernel.sobel_y);
+    var no_normalize = 1;  // sobel kernel's auto-normalize
+    var edge_x = convolve(img, kernel.sobel_x, no_normalize);
+    var edge_y = convolve(img, kernel.sobel_y, no_normalize);
     draw_img_on_canvas(document.getElementById('canvas-edge-x'), edge_x);
     draw_img_on_canvas(document.getElementById('canvas-edge-y'), edge_y);
 }
@@ -133,21 +134,23 @@ window.kernel = {
                  4,  9, 12,  9, 4],
 };
 
-function convolve(img, kernel) {
+function convolve(img, kernel, normalize) {
     /* convolve a kernel with an image, returning a new image with the same
      * dimensions post-convolution. Auto-normalizes values so that image is not
      * washed-out / faded. Overall resulting img should have ~ same luminosity
      * as original.
      */
     var new_img = copy_image(img),
-        kernel_sum = 0,
         ksqrt = Math.sqrt(kernel.length);
     if ((Math.round(ksqrt) != ksqrt) || (ksqrt % 2 == 0)) {
         console.log('kernel must be square, with odd-length sides like 3x3, 5x5');
     }
-    kernel.forEach(function(num) {
-        kernel_sum += num;
-    });
+    if (normalize === undefined) {
+        normalize = 0;
+        kernel.forEach(function(num) {
+            normalize += num;
+        });
+    }
     // neighbors == # depth of neighbors around kernel center. 3x3 = 1 neighbor
     var neighbors = (ksqrt - 1) / 2,
         k,
@@ -164,7 +167,7 @@ function convolve(img, kernel) {
                     pixel += p * kernel[++k];  //weight pixel value
                 }
             }
-            pixel /= kernel_sum;  //prevents over/undersaturation of img
+            pixel /= normalize;  //prevents over/undersaturation of img
             set_pixel(new_img, x, y, pixel);
         }
     }
