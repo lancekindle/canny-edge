@@ -1,7 +1,3 @@
-window.canvas = document.getElementById('canvas');
-window.ctx = canvas.getContext('2d');
-window.grey_canvas = document.getElementById('canvas-grey');
-
 document.getElementById('imgLoader').onchange = function handleImage(e) {
     /*function requires an element: <input type="file" id="imgLoader">
      loads image into window.orig_im, draws image on window.canvas. Then
@@ -25,24 +21,25 @@ function auto_load_image() {
      */
     var orig_im = new Image();
     orig_im.onload = function() {
-        CanvImg.draw_raw_img_on_canvas(window.canvas, orig_im);
-        window.im = orig_im;
-        window.orig_im = CanvImg.get_canvas_img(canvas);
-        window.pix = window.orig_im.data;
-        step1_greyscale(window.orig_im);
+        var orig_canv = document.getElementById('canvas');
+        CanvImg.draw_raw_img_on_canvas(orig_canv, orig_im);
+        first_img = CanvImg.get_canvas_img(orig_canv);
+        step1_greyscale(first_img);
     }
     orig_im.src = "car.jpg";
 }
 
 function step1_greyscale(img) {
-    window.grey = CanvImg.get_greyscale(img);
-    CanvImg.draw_img_on_canvas(window.grey_canvas, grey);
+    var grey = CanvImg.get_greyscale(img);
+    var canv_grey = document.getElementById('canvas-grey');
+    CanvImg.draw_img_on_canvas(canv_grey, grey);
     setTimeout(function() {step2_blur(grey);}, 10);
 }
 
 function step2_blur(img) {
     var blurred = CanvImg.convolve(img, CanvImg.KERNEL.gaussian);
-    CanvImg.draw_img_on_canvas(document.getElementById('canvas-3'), blurred);
+    var canv_blur = document.getElementById('canvas-3');
+    CanvImg.draw_img_on_canvas(canv_blur, blurred);
     setTimeout(function() {step3_edge_detect_x(blurred);}, 10);
 }
 
@@ -52,7 +49,8 @@ function step3_edge_detect_x(img) {
     var edge_x_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x_reverse, no_normalize);
     var edge_x = CanvImg.colorfly_combine_3_images(edge_x_pos, edge_x_neg, undefined);
     // red color is positive x edges, green is negative x edges
-    CanvImg.draw_img_on_canvas(document.getElementById('canvas-edge-x'), edge_x);
+    var canv_xedge = document.getElementById('canvas-edge-x');
+    CanvImg.draw_img_on_canvas(canv_xedge, edge_x);
     setTimeout(function(){step4_edge_detect_y(img);}, 10);
 }
 
@@ -62,5 +60,6 @@ function step4_edge_detect_y(img) {
     var edge_y_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_y_reverse, no_normalize);
     var edge_y = CanvImg.colorfly_combine_3_images(edge_y_pos, edge_y_pos, edge_y_neg);
     // yellow is positive y edges, blue is negative y edges
-    CanvImg.draw_img_on_canvas(document.getElementById('canvas-edge-y'), edge_y);
+    var canv_yedge = document.getElementById('canvas-edge-y');
+    CanvImg.draw_img_on_canvas(canv_yedge, edge_y);
 }
