@@ -12,10 +12,10 @@ document.getElementById('imgLoader').onchange = function handleImage(e) {
     var reader = new FileReader();
     reader.onload = function (event) { console.log('going to load image');
         orig_im = new Image();
-        orig_im.src = event.target.result;
         orig_im.onload = function () {
             // copy from auto_load_image once finished creating    
         }
+        orig_im.src = event.target.result;
     }
     reader.readAsDataURL(e.target.files[0]);
 }
@@ -26,8 +26,6 @@ function auto_load_image() {
     /*auto-loads image from file to assist in coding 
      */
     var orig_im = new Image();
-    var src = "car.jpg";
-    orig_im.src = src;
     orig_im.onload = function() {
         draw_raw_img_on_canvas(window.canvas, orig_im);
         window.im = orig_im;
@@ -35,6 +33,7 @@ function auto_load_image() {
         window.pix = window.orig_im.data;
         step1_greyscale(window.orig_im);
     }
+    orig_im.src = "car.jpg";
 }
 
 function step1_greyscale(img) {
