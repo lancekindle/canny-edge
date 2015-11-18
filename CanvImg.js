@@ -1,6 +1,11 @@
-"use strict";
-
 window.CanvImg = {};
+
+/*call this function immediately. Attaches all the fxns below to CanvImg
+ *object. Very similar to how RequireJS runs, but this emulates it closely
+ *without requiring the library.
+ */
+(function(){
+"use strict"; // causes all fxns defined herein to be optimized better
 
 CanvImg.draw_img_on_canvas = function(canvas, image) {
     /*resizes canvas internally so that full image is displayed. However, the
@@ -249,3 +254,5 @@ CanvImg.get_greyscale = function(img) {
     }
     return img;
 }
+
+})();
