@@ -14,10 +14,7 @@ document.getElementById('imgLoader').onchange = function handleImage(e) {
         orig_im = new Image();
         orig_im.src = event.target.result;
         orig_im.onload = function () {
-            draw_img_on_canvas(canvas, orig_im);
-            window.orig_im = get_canvas_img(canvas);
-            strip_alpha_channel(window.orig_im);
-            window.pix = window.orig_im.data;
+            // copy from auto_load_image once finished creating    
         }
     }
     reader.readAsDataURL(e.target.files[0]);
@@ -47,7 +44,7 @@ function step1_greyscale(img) {
 }
 
 function step2_blur(img) {
-    var blurred = convolve(img, blur_kernel);
+    var blurred = convolve(img, kernel.gaussian);
     draw_img_on_canvas(document.getElementById('canvas-3'), blurred);
 }
 
@@ -108,9 +105,26 @@ function copy_image(img) {
     return copy;
 }
 
-window.blur_kernel = [1, 1, 1,
-                      1, 1, 1,
-                      1, 1, 1,];
+window.kernel = {
+
+    'blur': [1, 1, 1,
+             1, 1, 1,
+             1, 1, 1],
+
+    'sobel_y': [-1, -2, -1,
+                 0,  0,  0,
+                +1, +2, +1],
+
+    'sobel_x': [-1, 0, +1, 
+                -2, 0, +2,
+                -1, 0, +1],
+
+    'gaussian': [2,  4,  5,  4, 2,
+                 4,  9, 12,  9, 4,
+                 5, 12, 15, 12, 5,
+                 2,  4,  5,  4, 2,
+                 4,  9, 12,  9, 4],
+};
 
 function convolve(img, kernel) {
     /* convolve a kernel with an image, returning a new image with the same
