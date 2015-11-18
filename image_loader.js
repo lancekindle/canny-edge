@@ -193,7 +193,7 @@ function get_pixel(img, x, y) {
     return img.data[x + y];
 }
 
-function set_pixel(img, x, y, luminosity) {
+function set_pixel(img, x, y, value) {
     // this assumes that img is now greyscale. Sets Red, Green, & Blue
     // components of pixel at coordinates (x,y) to value
     x *= NUM_COLORS;
@@ -201,6 +201,57 @@ function set_pixel(img, x, y, luminosity) {
     img.data[x + y] = value;
     img.data[x + 1 + y] = value;
     img.data[x + 2 + y] = value;
+}
+
+function colorfly_combine_3_images(r, g, b) {
+    /* combine 3 images together, using each image as a basis for colors r,g,b.
+     * first image passed in will provide only red colors, second image provide
+     * green colors, third image provides blue colors. It is assumed that the
+     * passed in images are greyscale. If you pass in undefined as one of the
+     * images, the corresponding color will not appear in the image.
+     */
+    var im;
+    // create im from one of the undefined r, g, or b images
+    if (r !== undefined) {
+        im = new_image(r);
+    } else if (g !== undefined) {
+        im = new_image(g);
+    } else {
+        im = new_image(b);
+    }
+    strip_alpha_channel(im);
+    // if any of the r, g, or b images are undefined, initialize them as an img
+    if (r === undefined)
+        r = new_image(im);
+    if (g === undefined)
+        g = new_image(im);
+    if (b === undefined)
+        b = new_image(im);
+    var NUM_COLORS = 4;
+    var i;
+    var BLANK = 0;
+    var pixel;
+    for (i=0; i < im.data.length; i += NUM_COLORS) {
+        if (r === undefined) {
+            pixel = BLANK;
+        } else {
+            pixel = r.data[i];
+        }
+        im.data[i] = pixel;
+        if (g === undefined) {
+            pixel = BLANK;
+        } else {
+            pixel = g.data[i + 1];
+        }
+        im.data[i + 1] = pixel;
+        if (b === undefined) {
+            pixel = BLANK;
+        } else {
+            pixel = b.data[i + 2];
+        }
+        im.data[i + 2] = pixel;
+    }
+    return im;
 }
 
 function set_pixel_color(img, x, y, color_indices, luminosity) {
