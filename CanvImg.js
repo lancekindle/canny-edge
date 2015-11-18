@@ -7,15 +7,47 @@ window.CanvImg = {};
 (function(){
 "use strict"; // causes all fxns defined herein to be optimized better
 
-CanvImg.draw_img_on_canvas = function(canvas, image) {
-    /*resizes canvas internally so that full image is displayed. However, the
-     visual size of canvas within browser is not modified.
-     use this fxn to draw any image that you've modified from the original.
-     */
-    canvas.width = image.width;
-    canvas.height = image.height;
-    var ctx = canvas.getContext('2d');
-    ctx.putImageData(image, 0, 0);
+CanvImg.NUM_COLORS = 4;
+CanvImg.ALPHA = 3;
+CanvImg.BLANK = 0;
+CanvImg.OPAQUE = 255;
+CanvImg.KERNEL = {
+
+    blur: [1, 1, 1,
+           1, 1, 1,
+           1, 1, 1],
+
+    sobel_y: [-1, -2, -1,
+               0,  0,  0,
+              +1, +2, +1],
+
+    sobel_x: [-1, 0, +1,
+              -2, 0, +2,
+              -1, 0, +1],
+
+    sobel_y_reverse: [+1, +2, +1,
+                       0,  0,  0,
+                      -1, -2, -1],
+
+    sobel_x_reverse: [+1, 0, -1,
+                      +2, 0, -2,
+                      +1, 0, -1],
+
+    gaussian: [2,  4,  5,  4, 2,
+               4,  9, 12,  9, 4,
+               5, 12, 15, 12, 5,
+               2,  4,  5,  4, 2,
+               4,  9, 12,  9, 4],
+};
+
+//create, but do not add canvas to document. Keep it for creating a new image.
+CanvImg._CANVAS = document.createElement('canvas');
+
+CanvImg.new_image = function(im) {
+    //create blank image with same dimensions as im
+    var ctx = CanvImg._CANVAS.getContext('2d');
+    var new_img = ctx.createImageData(im);
+    return new_img;
 }
 
 CanvImg.draw_raw_img_on_canvas = function(canvas, raw_image) {
@@ -30,6 +62,17 @@ CanvImg.draw_raw_img_on_canvas = function(canvas, raw_image) {
 
 }
 
+CanvImg.draw_img_on_canvas = function(canvas, image) {
+    /*resizes canvas internally so that full image is displayed. However, the
+     visual size of canvas within browser is not modified.
+     use this fxn to draw any image that you've modified from the original.
+     */
+    canvas.width = image.width;
+    canvas.height = image.height;
+    var ctx = canvas.getContext('2d');
+    ctx.putImageData(image, 0, 0);
+}
+
 CanvImg.get_canvas_img = function(canvas) {
     /*assumes that canvas.width & canvas.height have been set to dimensions of 
     loaded image. Will return the full image data
@@ -38,17 +81,6 @@ CanvImg.get_canvas_img = function(canvas) {
     var w = canvas.width,
         h = canvas.height;
     return ctx.getImageData(0, 0, w, h);
-} 
-
-CanvImg.new_image = function(im) {
-    /*create blank image with same dimensions as im (or window.orig_im if no
-     image passed)
-     */
-    if (im === undefined) {
-        var im = window.orig_im
-    }
-    var new_img = window.ctx.createImageData(im);
-    return new_img;
 }
 
 CanvImg.copy_imgdata = function(src, dest) {
@@ -64,39 +96,6 @@ CanvImg.copy_image = function(img) {
     CanvImg.copy_imgdata(img.data, copy.data);
     return copy;
 }
-
-CanvImg.NUM_COLORS = 4;
-CanvImg.ALPHA = 3;
-CanvImg.BLANK = 0;
-CanvImg.OPAQUE = 255;
-CanvImg.KERNEL = {
-
-    blur: [1, 1, 1,
-           1, 1, 1,
-           1, 1, 1],
-
-    sobel_y: [-1, -2, -1,
-               0,  0,  0,
-              +1, +2, +1],
-
-    sobel_x: [-1, 0, +1, 
-              -2, 0, +2,
-              -1, 0, +1],
-
-    sobel_y_reverse: [+1, +2, +1,
-                       0,  0,  0,
-                      -1, -2, -1],
-
-    sobel_x_reverse: [+1, 0, -1, 
-                      +2, 0, -2,
-                      +1, 0, -1],
-
-    gaussian: [2,  4,  5,  4, 2,
-               4,  9, 12,  9, 4,
-               5, 12, 15, 12, 5,
-               2,  4,  5,  4, 2,
-               4,  9, 12,  9, 4],
-};
 
 CanvImg.convolve = function(img, kernel, normalize) {
     /* convolve a kernel with an image, returning a new image with the same
