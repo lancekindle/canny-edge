@@ -65,9 +65,11 @@ CanvImg.copy_image = function(img) {
     return copy;
 }
 
-window.NUM_COLORS = 4;
-
-window.KERNEL = {
+CanvImg.NUM_COLORS = 4;
+CanvImg.ALPHA = 3;
+CanvImg.BLANK = 0;
+CanvImg.OPAQUE = 255;
+CanvImg.KERNEL = {
 
     blur: [1, 1, 1,
            1, 1, 1,
@@ -140,16 +142,16 @@ CanvImg.get_pixel = function(img, x, y) {
     /* this assumes that img is now greyscale. Return Red component of pixel at
      * coordinates (x,y)
      */
-    x *= NUM_COLORS;
-    y *= NUM_COLORS * img.width;
+    x *= CanvImg.NUM_COLORS;
+    y *= CanvImg.NUM_COLORS * img.width;
     return img.data[x + y];
 }
 
 CanvImg.set_pixel = function(img, x, y, value) {
     // this assumes that img is now greyscale. Sets Red, Green, & Blue
     // components of pixel at coordinates (x,y) to value
-    x *= NUM_COLORS;
-    y *= NUM_COLORS * img.width;
+    x *= CanvImg.NUM_COLORS;
+    y *= CanvImg.NUM_COLORS * img.width;
     img.data[x + y] = value;
     img.data[x + 1 + y] = value;
     img.data[x + 2 + y] = value;
@@ -179,25 +181,23 @@ CanvImg.colorfly_combine_3_images = function(r, g, b) {
         g = CanvImg.new_image(im);
     if (b === undefined)
         b = CanvImg.new_image(im);
-    var NUM_COLORS = 4;
     var i;
-    var BLANK = 0;
     var pixel;
-    for (i=0; i < im.data.length; i += NUM_COLORS) {
+    for (i=0; i < im.data.length; i += CanvImg.NUM_COLORS) {
         if (r === undefined) {
-            pixel = BLANK;
+            pixel = CanvImg.BLANK;
         } else {
             pixel = r.data[i];
         }
         im.data[i] = pixel;
         if (g === undefined) {
-            pixel = BLANK;
+            pixel = CanvImg.BLANK;
         } else {
             pixel = g.data[i + 1];
         }
         im.data[i + 1] = pixel;
         if (b === undefined) {
-            pixel = BLANK;
+            pixel = CanvImg.BLANK;
         } else {
             pixel = b.data[i + 2];
         }
@@ -211,8 +211,8 @@ CanvImg.set_pixel_color = function(img, x, y, color_indices, luminosity) {
      * would set the pixel at x,y to rgb values: (0, 255, 0).
      * [0,1], 128 would set the rbg values @x,y to (128, 128, 0)
      */
-    x *= NUM_COLORS;
-    y *= NUM_COLORS * img.width;
+    x *= CanvImg.NUM_COLORS;
+    y *= CanvImg.NUM_COLORS * img.width;
     color_indices.forEach(function(i) {
         if ((i == 0) || (i == 1) || (i ==2)) {
             img.data[x + y + i] = luminosity;
@@ -224,26 +224,21 @@ CanvImg.set_pixel_color = function(img, x, y, color_indices, luminosity) {
 
 CanvImg.strip_alpha_channel = function(img) {
     // sets an image's alpha channel to opaque
-    var opaque = 255,
-        alpha_index = 3,
-        num_colors = 4,  //rgba (4 colors in image)
-        i;
-    for (i = alpha_index; i < img.data.length; i += num_colors) {
-        img.data[i] = opaque;
+    var i;
+    for (i = CanvImg.ALPHA; i < img.data.length; i += CanvImg.NUM_COLORS) {
+        img.data[i] = CanvImg.OPAQUE;
     }
 }
 
 CanvImg.get_greyscale = function(img) {
     // return a grayscaled copy of img
     var img = CanvImg.copy_image(img),
-        alpha_index = 3,
-        num_colors = 4,
         data = img.data,
         scaling = [0.299, 0.587, 0.114],
         greyscale,
         r, g, b,
         i;
-    for (i = 0; i < data.length; i += num_colors) {
+    for (i = 0; i < data.length; i += CanvImg.NUM_COLORS) {
          r = data[i + 0];
          g = data[i + 1];
          b = data[i + 2];
