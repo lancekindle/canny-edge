@@ -111,30 +111,33 @@ window.blur_kernel = [1, 1, 1,
 
 function convolve(img, kernel) {
     /* convolve a kernel with an image, returning a new image with the same
-     * dimensions post-convolution.
-     * Kernel must be a 3x3 kernel
+     * dimensions post-convolution. Auto-normalizes values so that image is not
+     * washed-out / faded. Overall resulting img should have ~ same luminosity
+     * as original.
      */
-    new_img = copy_image(img);
-    sum = 9; // TODO: sum all numbers from kernel
+    var new_img = copy_image(img);
+    var kernel_sum = 0;
+    var ksqrt = Math.sqrt(kernel.length);
+    if ((Math.round(ksqrt) != ksqrt) || (ksqrt % 2 == 0)) {
+        console.log('kernel must be square, with odd-length sides like 3x3, 5x5');
+    }
+    kernel.forEach(function(num) {
+        kernel_sum += num;
+    });
+    // neighbors == # depth of neighbors around kernel center. 3x3 = 1 neighbor
+    var neighbors = (ksqrt - 1) / 2;
     var pixel;
     for (x = 0; x < img.width; x++) {
         for (y = 0; y < img.height; y++) {
             pixel = 0;
             k = -1;  // index of kernel
-            //get pixels in 3x3 square around center pixel, multiply by
-            //corresponding kernel value
-            pixel += kernel[++k] * (get_pixel(img, x - 1, y - 1) || get_pixel(img, x, y));
-            pixel += kernel[++k] * (get_pixel(img, x, y - 1) || get_pixel(img, x, y));
-            pixel += kernel[++k] * (get_pixel(img, x + 1, y - 1) || get_pixel(img, x, y));
-
-            pixel += kernel[++k] * (get_pixel(img, x - 1, y) || get_pixel(img, x, y));
-            pixel += kernel[++k] * (get_pixel(img, x, y) || get_pixel(img, x, y));
-            pixel += kernel[++k] * (get_pixel(img, x + 1, y) || get_pixel(img, x, y));
-
-            pixel += kernel[++k] * (get_pixel(img, x - 1, y + 1) || get_pixel(img, x, y));
-            pixel += kernel[++k] * (get_pixel(img, x, y + 1) || get_pixel(img, x, y));
-            pixel += kernel[++k] * (get_pixel(img, x + 1, y + 1) || get_pixel(img, x, y));
-            pixel /= sum;
+            for (ny = -neighbors; ny <= neighbors; ny++) {
+                for (nx = -neighbors; nx <= neighbors; nx++) {
+                    p = get_pixel(img, x + nx, y + ny) || get_pixel(img, x, y);
+                    pixel += p * kernel[++k];  //weight pixel value
+                }
+            }
+            pixel /= kernel_sum;  //prevents over/undersaturation of img
             set_pixel(new_img, x, y, pixel);
         }
     }
@@ -142,8 +145,9 @@ function convolve(img, kernel) {
 }
 
 function get_pixel(img, x, y) {
-    // this assumes that img is now greyscale. Return Red component of pixel at
-    // coordinates (x,y)
+    /* this assumes that img is now greyscale. Return Red component of pixel at
+     * coordinates (x,y)
+     */
     var num_colors = 4;
     var w = img.width;
     x *= num_colors;
