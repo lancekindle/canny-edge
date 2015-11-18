@@ -89,14 +89,16 @@ function get_canvas_img(canvas) {
     return ctx.getImageData(0, 0, w, h);
 } 
 
+
 function new_image(im) {
     /*create blank image with same dimensions as im (or window.orig_im if no
      image passed)
      */
-    if (im == undefined) {
+    if (im === undefined) {
         var im = window.orig_im
     }
-    return window.ctx.createImageData(im);
+    var new_img = window.ctx.createImageData(im);
+    return new_img;
 }
 
 function copy_imgdata(src, dest) {
