@@ -1,6 +1,8 @@
 "use strict";
 
-function draw_img_on_canvas(canvas, image) {
+window.CanvImg = {};
+
+CanvImg.draw_img_on_canvas = function(canvas, image) {
     /*resizes canvas internally so that full image is displayed. However, the
      visual size of canvas within browser is not modified.
      use this fxn to draw any image that you've modified from the original.
@@ -11,7 +13,7 @@ function draw_img_on_canvas(canvas, image) {
     ctx.putImageData(image, 0, 0);
 }
 
-function draw_raw_img_on_canvas(canvas, raw_image) {
+CanvImg.draw_raw_img_on_canvas = function(canvas, raw_image) {
     /*This is used only once; to draw the img after being loaded from file.
      sizes canvas internally so that full image is displayed. However, the
      visual size of canvas within browser is not modified.
@@ -23,7 +25,7 @@ function draw_raw_img_on_canvas(canvas, raw_image) {
 
 }
 
-function get_canvas_img(canvas) {
+CanvImg.get_canvas_img = function(canvas) {
     /*assumes that canvas.width & canvas.height have been set to dimensions of 
     loaded image. Will return the full image data
      */
@@ -33,7 +35,7 @@ function get_canvas_img(canvas) {
     return ctx.getImageData(0, 0, w, h);
 } 
 
-function new_image(im) {
+CanvImg.new_image = function(im) {
     /*create blank image with same dimensions as im (or window.orig_im if no
      image passed)
      */
@@ -44,7 +46,7 @@ function new_image(im) {
     return new_img;
 }
 
-function copy_imgdata(src, dest) {
+CanvImg.copy_imgdata = function(src, dest) {
     // copy imgdata from src to dest by iterating over all indices
     var i;
     for (i=0; i < src.length; i++) {
@@ -52,9 +54,9 @@ function copy_imgdata(src, dest) {
     }
 }
 
-function copy_image(img) {
-    var copy = new_image(img);
-    copy_imgdata(img.data, copy.data);
+CanvImg.copy_image = function(img) {
+    var copy = CanvImg.new_image(img);
+    CanvImg.copy_imgdata(img.data, copy.data);
     return copy;
 }
 
@@ -89,13 +91,13 @@ window.KERNEL = {
                4,  9, 12,  9, 4],
 };
 
-function convolve(img, kernel, normalize) {
+CanvImg.convolve = function(img, kernel, normalize) {
     /* convolve a kernel with an image, returning a new image with the same
      * dimensions post-convolution. Auto-normalizes values so that image is not
      * washed-out / faded. Overall resulting img should have ~ same luminosity
      * as original.
      */
-    var new_img = copy_image(img),
+    var new_img = CanvImg.copy_image(img),
         ksqrt = Math.sqrt(kernel.length);
     if ((Math.round(ksqrt) != ksqrt) || (ksqrt % 2 == 0)) {
         console.log('kernel must be square, with odd-length sides like 3x3, 5x5');
@@ -118,18 +120,18 @@ function convolve(img, kernel, normalize) {
             k = -1;  // index of kernel
             for (ny = -neighbors; ny <= neighbors; ny++) {
                 for (nx = -neighbors; nx <= neighbors; nx++) {
-                    p = get_pixel(img, x + nx, y + ny) || get_pixel(img, x, y);
+                    p = CanvImg.get_pixel(img, x + nx, y + ny) || CanvImg.get_pixel(img, x, y);
                     pixel += p * kernel[++k];  //weight pixel value
                 }
             }
             pixel /= normalize;  //prevents over/undersaturation of img
-            set_pixel(new_img, x, y, pixel);
+            CanvImg.set_pixel(new_img, x, y, pixel);
         }
     }
     return new_img;
 }
 
-function get_pixel(img, x, y) {
+CanvImg.get_pixel = function(img, x, y) {
     /* this assumes that img is now greyscale. Return Red component of pixel at
      * coordinates (x,y)
      */
@@ -138,7 +140,7 @@ function get_pixel(img, x, y) {
     return img.data[x + y];
 }
 
-function set_pixel(img, x, y, value) {
+CanvImg.set_pixel = function(img, x, y, value) {
     // this assumes that img is now greyscale. Sets Red, Green, & Blue
     // components of pixel at coordinates (x,y) to value
     x *= NUM_COLORS;
@@ -148,7 +150,7 @@ function set_pixel(img, x, y, value) {
     img.data[x + 2 + y] = value;
 }
 
-function colorfly_combine_3_images(r, g, b) {
+CanvImg.colorfly_combine_3_images = function(r, g, b) {
     /* combine 3 images together, using each image as a basis for colors r,g,b.
      * first image passed in will provide only red colors, second image provide
      * green colors, third image provides blue colors. It is assumed that the
@@ -158,20 +160,20 @@ function colorfly_combine_3_images(r, g, b) {
     var im;
     // create im from one of the undefined r, g, or b images
     if (r !== undefined) {
-        im = new_image(r);
+        im = CanvImg.new_image(r);
     } else if (g !== undefined) {
-        im = new_image(g);
+        im = CanvImg.new_image(g);
     } else {
-        im = new_image(b);
+        im = CanvImg.new_image(b);
     }
-    strip_alpha_channel(im);
+    CanvImg.strip_alpha_channel(im);
     // if any of the r, g, or b images are undefined, initialize them as an img
     if (r === undefined)
-        r = new_image(im);
+        r = CanvImg.new_image(im);
     if (g === undefined)
-        g = new_image(im);
+        g = CanvImg.new_image(im);
     if (b === undefined)
-        b = new_image(im);
+        b = CanvImg.new_image(im);
     var NUM_COLORS = 4;
     var i;
     var BLANK = 0;
@@ -199,7 +201,7 @@ function colorfly_combine_3_images(r, g, b) {
     return im;
 }
 
-function set_pixel_color(img, x, y, color_indices, luminosity) {
+CanvImg.set_pixel_color = function(img, x, y, color_indices, luminosity) {
     /* set a specific color-indices @ x, y to given luminosity. So [1], 255
      * would set the pixel at x,y to rgb values: (0, 255, 0).
      * [0,1], 128 would set the rbg values @x,y to (128, 128, 0)
@@ -215,7 +217,7 @@ function set_pixel_color(img, x, y, color_indices, luminosity) {
     });
 }
 
-function strip_alpha_channel(img) {
+CanvImg.strip_alpha_channel = function(img) {
     // sets an image's alpha channel to opaque
     var opaque = 255,
         alpha_index = 3,
@@ -226,9 +228,9 @@ function strip_alpha_channel(img) {
     }
 }
 
-function get_greyscale(img) {
+CanvImg.get_greyscale = function(img) {
     // return a grayscaled copy of img
-    var img = copy_image(img),
+    var img = CanvImg.copy_image(img),
         alpha_index = 3,
         num_colors = 4,
         data = img.data,

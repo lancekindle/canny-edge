@@ -25,9 +25,9 @@ function auto_load_image() {
      */
     var orig_im = new Image();
     orig_im.onload = function() {
-        draw_raw_img_on_canvas(window.canvas, orig_im);
+        CanvImg.draw_raw_img_on_canvas(window.canvas, orig_im);
         window.im = orig_im;
-        window.orig_im = get_canvas_img(canvas);
+        window.orig_im = CanvImg.get_canvas_img(canvas);
         window.pix = window.orig_im.data;
         step1_greyscale(window.orig_im);
     }
@@ -35,32 +35,32 @@ function auto_load_image() {
 }
 
 function step1_greyscale(img) {
-    window.grey = get_greyscale(img);
-    draw_img_on_canvas(window.grey_canvas, grey);
+    window.grey = CanvImg.get_greyscale(img);
+    CanvImg.draw_img_on_canvas(window.grey_canvas, grey);
     setTimeout(function() {step2_blur(grey);}, 10);
 }
 
 function step2_blur(img) {
-    var blurred = convolve(img, KERNEL.gaussian);
-    draw_img_on_canvas(document.getElementById('canvas-3'), blurred);
+    var blurred = CanvImg.convolve(img, KERNEL.gaussian);
+    CanvImg.draw_img_on_canvas(document.getElementById('canvas-3'), blurred);
     setTimeout(function() {step3_edge_detect_x(blurred);}, 10);
 }
 
 function step3_edge_detect_x(img) {
     var no_normalize = 1;  // sobel kernel's auto-normalize
-    var edge_x_pos = convolve(img, KERNEL.sobel_x, no_normalize);
-    var edge_x_neg = convolve(img, KERNEL.sobel_x_reverse, no_normalize);
-    var edge_x = colorfly_combine_3_images(edge_x_pos, edge_x_neg, undefined);
+    var edge_x_pos = CanvImg.convolve(img, KERNEL.sobel_x, no_normalize);
+    var edge_x_neg = CanvImg.convolve(img, KERNEL.sobel_x_reverse, no_normalize);
+    var edge_x = CanvImg.colorfly_combine_3_images(edge_x_pos, edge_x_neg, undefined);
     // red color is positive x edges, green is negative x edges
-    draw_img_on_canvas(document.getElementById('canvas-edge-x'), edge_x);
+    CanvImg.draw_img_on_canvas(document.getElementById('canvas-edge-x'), edge_x);
     setTimeout(function(){step4_edge_detect_y(img);}, 10);
 }
 
 function step4_edge_detect_y(img) {
     var no_normalize = 1;
-    var edge_y_pos = convolve(img, KERNEL.sobel_y, no_normalize);
-    var edge_y_neg = convolve(img, KERNEL.sobel_y_reverse, no_normalize);
-    var edge_y = colorfly_combine_3_images(edge_y_pos, edge_y_pos, edge_y_neg);
+    var edge_y_pos = CanvImg.convolve(img, KERNEL.sobel_y, no_normalize);
+    var edge_y_neg = CanvImg.convolve(img, KERNEL.sobel_y_reverse, no_normalize);
+    var edge_y = CanvImg.colorfly_combine_3_images(edge_y_pos, edge_y_pos, edge_y_neg);
     // yellow is positive y edges, blue is negative y edges
-    draw_img_on_canvas(document.getElementById('canvas-edge-y'), edge_y);
+    CanvImg.draw_img_on_canvas(document.getElementById('canvas-edge-y'), edge_y);
 }
