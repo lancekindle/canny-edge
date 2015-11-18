@@ -46,6 +46,14 @@ function step1_greyscale(img) {
 function step2_blur(img) {
     var blurred = convolve(img, kernel.gaussian);
     draw_img_on_canvas(document.getElementById('canvas-3'), blurred);
+    step3_edge_detect_xy(blurred);
+}
+
+function step3_edge_detect_xy(img) {
+    var edge_x = convolve(img, kernel.sobel_x);
+    var edge_y = convolve(img, kernel.sobel_y);
+    draw_img_on_canvas(document.getElementById('canvas-edge-x'), edge_x);
+    draw_img_on_canvas(document.getElementById('canvas-edge-y'), edge_y);
 }
 
 function draw_img_on_canvas(canvas, image) {
