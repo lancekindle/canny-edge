@@ -119,14 +119,34 @@ CanvImg.convolve = function(img, kernel, normalize) {
         k,
         x, y,
         nx, ny,
-        p, pixel;
+        xx, yy,
+        p, pixel,
+        b,
+        out_of_y_bounds = [],
+        out_of_x_bounds = [],
+        out_of_bounds = false;
+    // pre-calculate x and y indices that would be out of bounds
+    for (b = 0; b <= neighbors; b++) {
+        out_of_x_bounds[-1 - b] = true;
+        out_of_x_bounds[img.width + b] = true;
+        out_of_y_bounds[-1 -b] = true;
+        out_of_y_bounds[img.height + b] = true;
+    }
     for (x = 0; x < img.width; x++) {
         for (y = 0; y < img.height; y++) {
             pixel = 0;
             k = -1;  // index of kernel
             for (ny = -neighbors; ny <= neighbors; ny++) {
+                yy = y + ny;
+                out_of_bounds = out_of_y_bounds[yy];
                 for (nx = -neighbors; nx <= neighbors; nx++) {
-                    p = CanvImg.get_pixel(img, x + nx, y + ny) || CanvImg.get_pixel(img, x, y);
+                    xx = x + nx;
+                    if (out_of_bounds || out_of_x_bounds[xx]) {
+                        p = CanvImg.get_pixel(img, x, y);
+                        console.log('outa bounds');
+                    } else {
+                        p = CanvImg.get_pixel(img, xx, yy);
+                    }
                     pixel += p * kernel[++k];  //weight pixel value
                 }
             }
