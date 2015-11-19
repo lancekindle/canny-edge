@@ -44,9 +44,8 @@ function step2_blur(img) {
 }
 
 function step3_edge_detect_x(img) {
-    var no_normalize = 1;  // sobel kernel's auto-normalize
-    var edge_x_pos = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x, no_normalize);
-    var edge_x_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x_reverse, no_normalize);
+    var edge_x_pos = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x);
+    var edge_x_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x_reverse);
     // red color is positive x edges, cyan is negative x edges
     var edge_x = CanvImg.colorfly_combine_3_images(edge_x_pos, edge_x_neg, edge_x_neg);
     var canv_xedge = document.getElementById('canvas-edge-x');
@@ -56,8 +55,8 @@ function step3_edge_detect_x(img) {
 
 function step4_edge_detect_y(img, edge_x) {
     var no_normalize = 1;
-    var edge_y_pos = CanvImg.convolve(img, CanvImg.KERNEL.sobel_y, no_normalize);
-    var edge_y_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_y_reverse, no_normalize);
+    var edge_y_pos = CanvImg.convolve(img, CanvImg.KERNEL.sobel_y);
+    var edge_y_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_y_reverse);
     // yellow is positive y edges, blue is negative y edges
     var edge_y = CanvImg.colorfly_combine_3_images(edge_y_pos, edge_y_pos, edge_y_neg);
     var canv_yedge = document.getElementById('canvas-edge-y');

@@ -101,7 +101,9 @@ CanvImg.convolve = function(img, kernel, normalize) {
     /* convolve a kernel with an image, returning a new image with the same
      * dimensions post-convolution. Auto-normalizes values so that image is not
      * washed-out / faded. Overall resulting img should have ~ same luminosity
-     * as original.
+     * as original. However, if normalize parameter is defined, will divide all
+     * pixel values by normalize, which can result in washed-out / faded
+     * images.
      */
     var new_img = CanvImg.copy_image(img),
         ksqrt = Math.sqrt(kernel.length);
@@ -113,6 +115,11 @@ CanvImg.convolve = function(img, kernel, normalize) {
         kernel.forEach(function(num) {
             normalize += num;
         });
+        // if normalize is auto-calculated as zero, then we reset to 1;
+        // Otherwise normalize == 0 means image will become black & white
+        if (normalize == 0) {
+            normalize = 1;
+        }
     }
     // neighbors == # depth of neighbors around kernel center. 3x3 = 1 neighbor
     var neighbors = (ksqrt - 1) / 2,
@@ -143,7 +150,6 @@ CanvImg.convolve = function(img, kernel, normalize) {
                     xx = x + nx;
                     if (out_of_bounds || out_of_x_bounds[xx]) {
                         p = CanvImg.get_pixel(img, x, y);
-                        console.log('outa bounds');
                     } else {
                         p = CanvImg.get_pixel(img, xx, yy);
                     }
