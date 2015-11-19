@@ -156,6 +156,20 @@ CanvImg.set_pixel = function(img, x, y, value) {
     img.data[x + 2 + y] = value;
 }
 
+CanvImg.average_2_images = function(im1, im2) {
+    /*average two images together into one image
+     */
+    var im = CanvImg.new_image(im1);
+    var d1 = im1.data,
+        d2 = im2.data,
+        data = im.data,
+        i;
+    for (i = 0; i < data.length; i++) {
+        data[i] = (d1[i] + d2[i]) / 2;
+    }
+    return im;
+}
+
 CanvImg.colorfly_combine_3_images = function(r, g, b) {
     /* combine 3 images together, using each image as a basis for colors r,g,b.
      * first image passed in will provide only red colors, second image provide
