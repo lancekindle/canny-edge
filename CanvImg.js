@@ -97,7 +97,7 @@ CanvImg.copy_image = function(img) {
     return copy;
 }
 
-CanvImg.convolve = function(img, kernel, normalize) {
+CanvImg.convolve = function(img, kernel, normalize, output_container) {
     /* convolve a kernel with an image, returning a new image with the same
      * dimensions post-convolution. Auto-normalizes values so that image is not
      * washed-out / faded. Overall resulting img should have ~ same luminosity
@@ -119,6 +119,23 @@ CanvImg.convolve = function(img, kernel, normalize) {
         // Otherwise normalize == 0 means image will become black & white
         if (normalize == 0) {
             normalize = 1;
+        }
+    }
+    // if output_container is defined, push convolution to output_container and
+    // return output_container instead where normally an image is returned
+    if (output_container === undefined) {
+        var set_output = function(im, x, y, pixel) {
+            CanvImg.set_pixel(im, x, y, pixel);
+         }
+        var return_value = function(im) {
+            return im;
+        }
+    } else {
+        var set_output = function(im, x, y, pixel) {
+             output_container[x + y * im.width] = pixel;
+        }
+        var return_value = function(im) {
+            return output_container;
         }
     }
     // neighbors == # depth of neighbors around kernel center. 3x3 = 1 neighbor
@@ -157,11 +174,11 @@ CanvImg.convolve = function(img, kernel, normalize) {
                 }
             }
             pixel /= normalize;  //prevents over/undersaturation of img
-            CanvImg.set_pixel(new_img, x, y, pixel);
+            set_output(new_img, x, y, pixel);
         }
     }
-    return new_img;
-}
+    return return_value(new_img);  // will instead return output_container if exists
+ }
 
 CanvImg.get_pixel = function(img, x, y) {
     /* this assumes that img is now greyscale. Return Red component of pixel at
