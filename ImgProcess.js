@@ -7,7 +7,10 @@ document.getElementById('imgLoader').onchange = function handleImage(e) {
     reader.onload = function (event) { console.log('going to load image');
         orig_im = new Image();
         orig_im.onload = function () {
-            // copy from auto_load_image once finished creating    
+            var orig_canv = document.getElementById('canvas');
+            CanvImg.draw_raw_img_on_canvas(orig_canv, orig_im);
+            first_img = CanvImg.get_canvas_img(orig_canv);
+            step1_greyscale(first_img);
         }
         orig_im.src = event.target.result;
     }
@@ -44,8 +47,10 @@ function step2_blur(img) {
 }
 
 function step3_edge_detect_x(img) {
-    var edge_x_pos = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x);
-    var edge_x_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x_reverse);
+    window.xedge = new Array(img.width * img.height);
+    xedge = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x, undefined, window.xedge);
+    window.edge_x_pos = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x);
+    window.edge_x_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x_reverse);
     // red color is positive x edges, cyan is negative x edges
     var edge_x = CanvImg.colorfly_combine_3_images(edge_x_pos, edge_x_neg, edge_x_neg);
     var canv_xedge = document.getElementById('canvas-edge-x');
