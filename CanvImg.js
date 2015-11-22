@@ -5,7 +5,7 @@ window.CanvImg = {};
  *without requiring the library.
  */
 (function(){
-"use strict"; // causes all fxns defined herein to be optimized better
+"use strict";
 
 CanvImg.NUM_COLORS = 4;
 CanvImg.ALPHA = 3;
@@ -51,9 +51,9 @@ CanvImg.new_image = function(im) {
 }
 
 CanvImg.draw_raw_img_on_canvas = function(canvas, raw_image) {
-    /*This is used only once; to draw the img after being loaded from file.
+    /*This is used only once; to draw the img loaded from file. It
      sizes canvas internally so that full image is displayed. However, the
-     visual size of canvas within browser is not modified.
+     visual size of canvas within browser is not changed.
      */
     canvas.width = raw_image.width;
     canvas.height = raw_image.height;
@@ -97,13 +97,22 @@ CanvImg.copy_image = function(img) {
     return copy;
 }
 
-CanvImg.convolve = function(img, kernel, normalize, output_container) {
+CanvImg.convolve = function(img, kernel, normalize, output_array) {
     /* convolve a kernel with an image, returning a new image with the same
-     * dimensions post-convolution. Auto-normalizes values so that image is not
+     * dimensions as the given image. Auto-normalizes values (divides each
+     * resulting pixel by the sum of the kernel) so that given image is not
      * washed-out / faded. Overall resulting img should have ~ same luminosity
-     * as original. However, if normalize parameter is defined, will divide all
-     * pixel values by normalize, which can result in washed-out / faded
-     * images.
+     * as original. 
+     * -
+     * Param normalize: an optional parameter to use in diving each pixel,
+     * rather than the sum of the kernel. If normalize > sum(kernel), the
+     * resultant image will be darker. If normalize < sum(kernel), lighter.
+     * -
+     * Param output_array: an optional array to hold the result of the
+     * convolution. This array will be returned instead of the new image, and
+     * it's length will be width x height of the original image. It's values
+     * will also not be uint8-clamped, meaning that positive and negative
+     * integer and decimal values can be expected in this array.
      */
     var new_img = CanvImg.copy_image(img),
         ksqrt = Math.sqrt(kernel.length);
@@ -115,15 +124,15 @@ CanvImg.convolve = function(img, kernel, normalize, output_container) {
         kernel.forEach(function(num) {
             normalize += num;
         });
-        // if normalize is auto-calculated as zero, then we reset to 1;
-        // Otherwise normalize == 0 means image will become black & white
+        // edge-finding kernels can have a net sum of 0, in which case we want
+        // to divide by 1, not 0 (as zero would cause the output image to
+        // effectively be Black and White, rather than the desired greyscale.
         if (normalize == 0) {
             normalize = 1;
         }
     }
-    // if output_container is defined, push convolution to output_container and
-    // return output_container instead where normally an image is returned
-    if (output_container === undefined) {
+    // setup push/return fxns to use im, or output_array if defined
+    if (output_array === undefined) {
         var set_output = function(im, x, y, pixel) {
             CanvImg.set_pixel(im, x, y, pixel);
          }
@@ -132,10 +141,10 @@ CanvImg.convolve = function(img, kernel, normalize, output_container) {
         }
     } else {
         var set_output = function(im, x, y, pixel) {
-             output_container[x + y * im.width] = pixel;
+             output_array[x + y * im.width] = pixel;
         }
         var return_value = function(im) {
-            return output_container;
+            return output_array;
         }
     }
     // neighbors == # depth of neighbors around kernel center. 3x3 = 1 neighbor
@@ -149,6 +158,7 @@ CanvImg.convolve = function(img, kernel, normalize, output_container) {
         out_of_y_bounds = [],
         out_of_x_bounds = [],
         out_of_bounds = false;
+
     // pre-calculate x and y indices that would be out of bounds
     for (b = 0; b <= neighbors; b++) {
         out_of_x_bounds[-1 - b] = true;
@@ -165,19 +175,23 @@ CanvImg.convolve = function(img, kernel, normalize, output_container) {
                 out_of_bounds = out_of_y_bounds[yy];
                 for (nx = -neighbors; nx <= neighbors; nx++) {
                     xx = x + nx;
+                    
+                    // if desired pixel is outside border of image, use pixel
+                    // at center of kernel, instead. (probably not ideal)
                     if (out_of_bounds || out_of_x_bounds[xx]) {
                         p = CanvImg.get_pixel(img, x, y);
                     } else {
                         p = CanvImg.get_pixel(img, xx, yy);
                     }
-                    pixel += p * kernel[++k];  //weight pixel value
+
+                    pixel += p * kernel[++k];
                 }
             }
             pixel /= normalize;  //prevents over/undersaturation of img
             set_output(new_img, x, y, pixel);
         }
     }
-    return return_value(new_img);  // will instead return output_container if exists
+    return get_return_value(new_img);
  }
 
 CanvImg.get_pixel = function(img, x, y) {
