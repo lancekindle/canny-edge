@@ -1,8 +1,12 @@
 window.CanvImg = {};
 
-/*call this function immediately. Attaches all the fxns below to CanvImg
- *object. Very similar to how RequireJS runs, but this emulates it closely
- *without requiring the library.
+/* call this function immediately. Attaches all the fxns below to CanvImg
+ * object. Very similar to how RequireJS runs, but this emulates it closely
+ * without requiring the library.
+ * This library iterates on, and returns images / arrays whose array represent
+ * rows of pixels, one below the other. (any algorithm in here should either
+ * iterate over full length with just a single index, or using two for loops,
+ * starting with y, then x.
  */
 (function(){
 "use strict";
@@ -166,8 +170,8 @@ CanvImg.convolve = function(img, kernel, normalize, output_array) {
         out_of_y_bounds[-1 -b] = true;
         out_of_y_bounds[img.height + b] = true;
     }
-    for (x = 0; x < img.width; x++) {
-        for (y = 0; y < img.height; y++) {
+    for (y = 0; y < img.height; y++) {
+        for (x = 0; x < img.width; x++) {
             pixel = 0;
             k = -1;  // index of kernel
             for (ny = -neighbors; ny <= neighbors; ny++) {
@@ -225,6 +229,60 @@ CanvImg.average_2_images = function(im1, im2) {
         data[i] = (d1[i] + d2[i]) / 2;
     }
     return im;
+}
+
+CanvImg.create_image_from_arrays = function(im, r, g, b, a) {
+    /* combine 3 arrays into an image. The 3 arrays given will represent, r, g,
+     * and b colors of the image. Alpha is assumed opaque.
+     * Argument must be an image that has target height and width. Any
+     * array not defined will be assumed value of 0.
+     */
+    if (r === undefined) {
+        r = new Array(im.length);
+        r.fill(0);
+    }
+    if (g === undefined) {
+        g = new Array(im.length);
+        g.fill(0);
+    }
+    if (b === undefined) {
+        b = new Array(im.length);
+        b.fill(0);
+    }
+    im = CanvImg.new_image(im);
+    var i,
+        width = im.width,
+        height = im.height,
+        data = im.data;
+    for (i = 0; i < im.length; i += CanvImg.NUM_COLORS) {
+        data[i] = r[i];
+        data[i + 1] = g[i];
+        data[i + 2] = b[i];
+    }
+    return im;
+}
+
+CanvImg.create_arrays_from_image = function(im) {
+    /* given an image, split into 4 arrays representing r, g, b, & a in that
+     * order. Accepting the returned arrays will look like:
+     * data = CanvImg.create_arrays_from_image(im);
+     * r = data[0];
+     * g = data[1];
+     * b = data[2];
+     * a = data[3];
+     */
+    var r = new Array(im.length),
+        g = new Array(im.length),
+        b = new Array(im.length),
+        a = new Array(im.lenght),
+        i;
+    for (i = 0; i < im.data.length; i += CanvImg.NUM_COLORS) {
+        r[i] = im.data[i];
+        g[i] = im.data[i + 1];
+        b[i] = im.data[i + 2];
+        a[i] = im.data[i + 3];
+    }
+    return r, g, b, a;
 }
 
 CanvImg.colorfly_combine_3_images = function(r, g, b) {
