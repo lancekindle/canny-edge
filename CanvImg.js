@@ -105,33 +105,36 @@ CanvImg.average_2_images = function(im1, im2) {
     return im;
 }
 
-CanvImg.create_image_from_arrays = function(im, r, g, b, a) {
+CanvImg.create_image_from_arrays = function(ref_im, r, g, b, a) {
     /* combine 3 arrays into an image. The 3 arrays given will represent, r, g,
      * and b colors of the image. Alpha is assumed opaque.
      * Argument must be an image that has target height and width. Any
      * array not defined will be assumed value of 0.
      */
     if (r === undefined) {
-        r = new Array(im.length);
+        r = new Array(ref_im.data.length);
         r.fill(0);
     }
     if (g === undefined) {
-        g = new Array(im.length);
+        g = new Array(ref_im.data.length);
         g.fill(0);
     }
     if (b === undefined) {
-        b = new Array(im.length);
+        b = new Array(ref_im.data.length);
         b.fill(0);
     }
-    im = CanvImg.new_image(im);
-    var i,
-        width = im.width,
-        height = im.height,
-        data = im.data;
-    for (i = 0; i < im.length; i += CanvImg.NUM_COLORS) {
-        data[i] = r[i];
-        data[i + 1] = g[i];
-        data[i + 2] = b[i];
+    var im = CanvImg.new_image(ref_im),
+        data = im.data,
+        k = -1;
+    for (var i = 0; i < data.length; i += CanvImg.NUM_COLORS) {
+        k++;
+        data[i] = r[k];
+        data[i + 1] = g[k];
+        data[i + 2] = b[k];
+        data[i + 3] = CanvImg.OPAQUE;
+    }
+    return im;
+}
     }
     return im;
 }
@@ -145,18 +148,27 @@ CanvImg.create_arrays_from_image = function(im) {
      * b = data[2];
      * a = data[3];
      */
-    var r = new Array(im.length),
-        g = new Array(im.length),
-        b = new Array(im.length),
-        a = new Array(im.lenght),
-        i;
-    for (i = 0; i < im.data.length; i += CanvImg.NUM_COLORS) {
-        r[i] = im.data[i];
-        g[i] = im.data[i + 1];
-        b[i] = im.data[i + 2];
-        a[i] = im.data[i + 3];
+    var r = new Array(),
+        g = new Array(),
+        b = new Array(),
+        a = new Array();
+    for (var i = 0; i < im.data.length; i += CanvImg.NUM_COLORS) {
+        r.push(im.data[i]);
+        g.push(im.data[i + 1]);
+        b.push(im.data[i + 2]);
+        a.push(im.data[i + 3]);
     }
-    return r, g, b, a;
+    var colors = {
+        red: r,
+        0: r,
+        green:  g,
+        1: g,
+        blue: b,
+        2: b,
+        alpha: a,
+        3: a,
+    };
+    return colors;
 }
 
 CanvImg.colorfly_combine_3_images = function(r, g, b) {
