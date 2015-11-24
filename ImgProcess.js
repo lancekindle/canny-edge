@@ -39,38 +39,35 @@ function step1_greyscale(img) {
     setTimeout(function() {step2_blur(grey);}, 10);
 }
 
-function step2_blur(img) {
-    var blurred = CanvImg.convolve(img, CanvImg.KERNEL.gaussian);
+function step2_blur(grey_img) {
+    img_tuple = CanvImg.create_arrays_from_image(grey_img);
+    grey_array = img_tuple[0];
+    blur_array = Canny.convolve(grey_array, Canny.KERNEL.gaussian, grey_img);
+    var blur_img = CanvImg.create_greyscale_image_from_array(grey_img, blur_array);
     var canv_blur = document.getElementById('canvas-3');
-    CanvImg.draw_img_on_canvas(canv_blur, blurred);
-    setTimeout(function() {step3_edge_detect_x(blurred);}, 10);
+    CanvImg.draw_img_on_canvas(canv_blur, blur_img);
+    setTimeout(function() {step3_edge_detect_x(blur_img, blur_array);}, 10);
 }
 
-function step3_edge_detect_x(img) {
-    window.xedge = new Array(img.width * img.height);
-    xedge = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x, undefined, window.xedge);
-    edge_x_pos = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x);
-    edge_x_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_x_reverse);
+function step3_edge_detect_x(blur_img, blur_array) {
+    xedge = Canny.convolve(blur_array, Canny.KERNEL.sobel_x, blur_img);
+    edge_x = CanvImg.create_greyscale_image_from_array(blur_img, xedge);
     // red color is positive x edges, cyan is negative x edges
-    var edge_x = CanvImg.colorfly_combine_3_images(edge_x_pos, edge_x_neg, edge_x_neg);
     var canv_xedge = document.getElementById('canvas-edge-x');
     CanvImg.draw_img_on_canvas(canv_xedge, edge_x);
-    setTimeout(function(){step4_edge_detect_y(img, edge_x);}, 10);
+    setTimeout(function(){step4_edge_detect_y(blur_img, blur_array);}, 10);
 }
 
-function step4_edge_detect_y(img, edge_x) {
-    window.xedge = new Array(img.width * img.height);
-    yedge = CanvImg.convolve(img, CanvImg.KERNEL.sobel_y, undefined, window.yedge);
-    var edge_y_pos = CanvImg.convolve(img, CanvImg.KERNEL.sobel_y);
-    var edge_y_neg = CanvImg.convolve(img, CanvImg.KERNEL.sobel_y_reverse);
+function step4_edge_detect_y(blur_img, blur_array) {
+    yedge = Canny.convolve(blur_array, Canny.KERNEL.sobel_y, blur_img);
+    edge_y = CanvImg.create_greyscale_image_from_array(blur_img, yedge);
     // yellow is positive y edges, blue is negative y edges
-    var edge_y = CanvImg.colorfly_combine_3_images(edge_y_pos, edge_y_pos, edge_y_neg);
     var canv_yedge = document.getElementById('canvas-edge-y');
     CanvImg.draw_img_on_canvas(canv_yedge, edge_y);
-    setTimeout(function(){step5_combine_edges(edge_x, edge_y);}, 10);
+    setTimeout(function(){step5_combine_edges(blur_img, blur_array);}, 10);
 }
 
-function step5_combine_edges(edge_x, edge_y) {
+function step5_combine_edges(blur_img, blur_array) {
     var canv_edge = document.getElementById('canvas-edge');
     var edge_mag = CanvImg.average_2_images(edge_x, edge_y);
     CanvImg.draw_img_on_canvas(canv_edge, edge_mag);
