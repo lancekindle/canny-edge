@@ -15,34 +15,6 @@ CanvImg.NUM_COLORS = 4;
 CanvImg.ALPHA = 3;
 CanvImg.BLANK = 0;
 CanvImg.OPAQUE = 255;
-CanvImg.KERNEL = {
-
-    blur: [1, 1, 1,
-           1, 1, 1,
-           1, 1, 1],
-
-    sobel_y: [-1, -2, -1,
-               0,  0,  0,
-              +1, +2, +1],
-
-    sobel_x: [-1, 0, +1,
-              -2, 0, +2,
-              -1, 0, +1],
-
-    sobel_y_reverse: [+1, +2, +1,
-                       0,  0,  0,
-                      -1, -2, -1],
-
-    sobel_x_reverse: [+1, 0, -1,
-                      +2, 0, -2,
-                      +1, 0, -1],
-
-    gaussian: [2,  4,  5,  4, 2,
-               4,  9, 12,  9, 4,
-               5, 12, 15, 12, 5,
-               2,  4,  5,  4, 2,
-               4,  9, 12,  9, 4],
-};
 
 //create, but do not add canvas to document. Keep it for creating a new image.
 CanvImg._CANVAS = document.createElement('canvas');
@@ -100,103 +72,6 @@ CanvImg.copy_image = function(img) {
     CanvImg.copy_imgdata(img.data, copy.data);
     return copy;
 }
-
-CanvImg.convolve = function(img, kernel, normalize, output_array) {
-    /* convolve a kernel with an image, returning a new image with the same
-     * dimensions as the given image. Auto-normalizes values (divides each
-     * resulting pixel by the sum of the kernel) so that given image is not
-     * washed-out / faded. Overall resulting img should have ~ same luminosity
-     * as original. 
-     * -
-     * Param normalize: an optional parameter to use in diving each pixel,
-     * rather than the sum of the kernel. If normalize > sum(kernel), the
-     * resultant image will be darker. If normalize < sum(kernel), lighter.
-     * -
-     * Param output_array: an optional array to hold the result of the
-     * convolution. This array will be returned instead of the new image, and
-     * it's length will be width x height of the original image. It's values
-     * will also not be uint8-clamped, meaning that positive and negative
-     * integer and decimal values can be expected in this array.
-     */
-    var new_img = CanvImg.copy_image(img),
-        ksqrt = Math.sqrt(kernel.length);
-    if ((Math.round(ksqrt) != ksqrt) || (ksqrt % 2 == 0)) {
-        console.log('kernel must be square, with odd-length sides like 3x3, 5x5');
-    }
-    if (normalize === undefined) {
-        normalize = 0;
-        kernel.forEach(function(num) {
-            normalize += num;
-        });
-        // edge-finding kernels can have a net sum of 0, in which case we want
-        // to divide by 1, not 0 (as zero would cause the output image to
-        // effectively be Black and White, rather than the desired greyscale.
-        if (normalize == 0) {
-            normalize = 1;
-        }
-    }
-    // setup push/return fxns to use im, or output_array if defined
-    if (output_array === undefined) {
-        var set_output = function(im, x, y, pixel) {
-            CanvImg.set_pixel(im, x, y, pixel);
-         }
-        var return_value = function(im) {
-            return im;
-        }
-    } else {
-        var set_output = function(im, x, y, pixel) {
-             output_array[x + y * im.width] = pixel;
-        }
-        var return_value = function(im) {
-            return output_array;
-        }
-    }
-    // neighbors == # depth of neighbors around kernel center. 3x3 = 1 neighbor
-    var neighbors = (ksqrt - 1) / 2,
-        k,
-        x, y,
-        nx, ny,
-        xx, yy,
-        p, pixel,
-        b,
-        out_of_y_bounds = [],
-        out_of_x_bounds = [],
-        out_of_bounds = false;
-
-    // pre-calculate x and y indices that would be out of bounds
-    for (b = 0; b <= neighbors; b++) {
-        out_of_x_bounds[-1 - b] = true;
-        out_of_x_bounds[img.width + b] = true;
-        out_of_y_bounds[-1 -b] = true;
-        out_of_y_bounds[img.height + b] = true;
-    }
-    for (y = 0; y < img.height; y++) {
-        for (x = 0; x < img.width; x++) {
-            pixel = 0;
-            k = -1;  // index of kernel
-            for (ny = -neighbors; ny <= neighbors; ny++) {
-                yy = y + ny;
-                out_of_bounds = out_of_y_bounds[yy];
-                for (nx = -neighbors; nx <= neighbors; nx++) {
-                    xx = x + nx;
-                    
-                    // if desired pixel is outside border of image, use pixel
-                    // at center of kernel, instead. (probably not ideal)
-                    if (out_of_bounds || out_of_x_bounds[xx]) {
-                        p = CanvImg.get_pixel(img, x, y);
-                    } else {
-                        p = CanvImg.get_pixel(img, xx, yy);
-                    }
-
-                    pixel += p * kernel[++k];
-                }
-            }
-            pixel /= normalize;  //prevents over/undersaturation of img
-            set_output(new_img, x, y, pixel);
-        }
-    }
-    return get_return_value(new_img);
- }
 
 CanvImg.get_pixel = function(img, x, y) {
     /* this assumes that img is now greyscale. Return Red component of pixel at

@@ -23,5 +23,125 @@ Canny.calculate_edge_magnitude = function(x_edge, y_edge) {
     return magnitude;
 }
 
+Canny.KERNEL = {
+
+    sobel_y: [-1, -2, -1,
+               0,  0,  0,
+              +1, +2, +1],
+
+    sobel_x: [-1, 0, +1,
+              -2, 0, +2,
+              -1, 0, +1],
+
+    sobel_y_reverse: [+1, +2, +1,
+                       0,  0,  0,
+                      -1, -2, -1],
+
+    sobel_x_reverse: [+1, 0, -1,
+                      +2, 0, -2,
+                      +1, 0, -1],
+
+    gaussian: [2,  4,  5,  4, 2,
+               4,  9, 12,  9, 4,
+               5, 12, 15, 12, 5,
+               2,  4,  5,  4, 2,
+               4,  9, 12,  9, 4],
+};
+
+Canny.convolve = function(img_array, kernel, ref_img, normalize) {
+    /* Convolve img_array (array representing an image) with kernel, producing
+     * an output array of same length as img_array. Output values will be
+     * automatically divided by the sum of the kernel, which keeps the average
+     * value of the output array equal to the average value of the input array.
+     * This means that the corresponding images to both arrays would have equal
+     * brightness. The values in the output array can be positive and negative
+     * integer and decimal values.
+     *- 
+      * Param img_array: input img array whose values each represent a different
+     *   pixel value. You can get a compatible img_array by passing an image
+     *   into CanvImg.create_arrays_from_image(img); You will get back a
+     *   4-tuple of arrays, representing the colors Red, Green, Blue, and
+     *   Alpha, respectively. Choose one of those arrays to pass into here.
+     *-
+     * Param kernel: kernel from Canny.KERNEL, a 3x3 or 5x5 kernel that'll be
+     *   convolved with the input image
+     *-
+     * Param reference_img: used to get width & height of source image.
+     *   Since the arrays are all one-dimensional, we need to know the
+     *   dimensions of source image in order to correctly convolve image.
+     *-
+     * Param normalize: an optional parameter to use in diving each pixel,
+     *   rather than the sum of the kernel. If normalize > sum(kernel), the
+     *   output array will have smaller values (and it's corresponding image
+     *   would be darker). If normalize < sum(kernel): bigger value & brighter
+     *   image.
+     */
+    var width = ref_img.width,
+        height = ref_img.height,
+        output_array = new Array(width * height),
+        ksqrt = Math.sqrt(kernel.length);
+    if ((Math.round(ksqrt) != ksqrt) || (ksqrt % 2 == 0)) {
+        console.log('kernel must be square, with odd-length sides like 3x3, 5x5');
+    }
+    if (normalize === undefined) {
+        normalize = 0;
+        kernel.forEach(function(num) {
+            normalize += num;
+        });
+        // edge-finding kernels can have a net sum of 0, in which case we want
+        // to divide by 1, not 0 (as zero would cause the output image to
+         // effectively be Black and White, rather than the desired greyscale.
+        if (normalize == 0) {
+            normalize = 1;
+        }
+    }
+    // neighbors == # depth of neighbors around kernel center. 3x3 = 1 neighbor
+    var neighbors = (ksqrt - 1) / 2,
+        k,
+        xx, yy,
+        p, pixel,
+        out_of_y_bounds = [],
+        out_of_x_bounds = [],
+        out_of_bounds = false;
+
+    // pre-calculate x and y indices that would be out of bounds
+    for (var b = 0; b <= neighbors; b++) {
+        out_of_x_bounds[-1 - b] = true;
+        out_of_x_bounds[width + b] = true;
+        out_of_y_bounds[-1 -b] = true;
+        out_of_y_bounds[height + b] = true;
+    }
+    console.log(width, height);
+    console.log(kernel);
+    console.log(ref_img);
+    console.log(img_array);
+    for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+            pixel = 0;
+            k = -1;  // index of kernel
+            for (var ny = -neighbors; ny <= neighbors; ny++) {
+                yy = y + ny;
+                out_of_bounds = out_of_y_bounds[yy];
+                for (var nx = -neighbors; nx <= neighbors; nx++) {
+                    xx = x + nx;
+                    // if desired pixel is outside border of image, use pixel
+                    // at center of kernel, instead. (probably not ideal)
+                    if (out_of_bounds || out_of_x_bounds[xx]) {
+                        p = img_array[x + y * width];
+                        //if (isNaN(p))
+                        //    console.log(x); console.log(y);
+                    } else {
+                        p = img_array[xx + yy * width];
+                    }
+                    pixel += p * kernel[++k];
+                }
+            }
+            pixel /= normalize; //prevents over/undersaturation of img
+            output_array[x + y * width] = pixel;
+        }
+    }
+    return output_array;
+}
 
 })();
+
