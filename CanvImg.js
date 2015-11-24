@@ -98,9 +98,8 @@ CanvImg.average_2_images = function(im1, im2) {
     var im = CanvImg.new_image(im1);
     var d1 = im1.data,
         d2 = im2.data,
-        data = im.data,
-        i;
-    for (i = 0; i < data.length; i++) {
+        data = im.data;
+    for (var i = 0; i < data.length; i++) {
         data[i] = (d1[i] + d2[i]) / 2;
     }
     return im;
@@ -184,9 +183,8 @@ CanvImg.colorfly_combine_3_images = function(r, g, b) {
         g = CanvImg.new_image(im);
     if (b === undefined)
         b = CanvImg.new_image(im);
-    var i;
     var pixel;
-    for (i=0; i < im.data.length; i += CanvImg.NUM_COLORS) {
+    for (var i = 0; i < im.data.length; i += CanvImg.NUM_COLORS) {
         if (r === undefined) {
             pixel = CanvImg.BLANK;
         } else {
@@ -227,8 +225,7 @@ CanvImg.set_pixel_color = function(img, x, y, color_indices, luminosity) {
 
 CanvImg.strip_alpha_channel = function(img) {
     // sets an image's alpha channel to opaque
-    var i;
-    for (i = CanvImg.ALPHA; i < img.data.length; i += CanvImg.NUM_COLORS) {
+    for (var i = CanvImg.ALPHA; i < img.data.length; i += CanvImg.NUM_COLORS) {
         img.data[i] = CanvImg.OPAQUE;
     }
 }
@@ -239,9 +236,8 @@ CanvImg.get_greyscale = function(img) {
         data = img.data,
         scaling = [0.299, 0.587, 0.114],
         greyscale,
-        r, g, b,
-        i;
-    for (i = 0; i < data.length; i += CanvImg.NUM_COLORS) {
+        r, g, b;
+    for (var i = 0; i < data.length; i += CanvImg.NUM_COLORS) {
          r = data[i + 0];
          g = data[i + 1];
          b = data[i + 2];
