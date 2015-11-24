@@ -135,6 +135,23 @@ CanvImg.create_image_from_arrays = function(ref_im, r, g, b, a) {
     }
     return im;
 }
+
+CanvImg.create_greyscale_image_from_array = function(ref_im, array) {
+    /* create image from single array. Value from array will be copied to all 3
+     * colors: red, green, and blue. Alpha is assumed opaque.
+     * Argument must be an image that has target height and width. Any
+     * array not defined will be assumed value of 0.
+     */
+    var im = CanvImg.new_image(ref_im);
+    var color,
+        data = im.data,
+        k = -1;
+    for (var i = 0; i < data.length; i += CanvImg.NUM_COLORS) {
+        color = array[++k];
+        data[i] = color;
+        data[i + 1] = color;
+        data[i + 2] = color;
+        data[i + 3] = CanvImg.OPAQUE;
     }
     return im;
 }
