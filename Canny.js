@@ -23,6 +23,29 @@ Canny.calculate_edge_magnitude = function(x_edge, y_edge) {
     return magnitude;
 }
 
+Canny.calculate_edge_angle = function(x_edge, y_edge) {
+    /* calculate angle of edges, given edge strength in x and y. Returns angle
+     * in degrees, 0 - 360.
+     * Param x_edge: array representing gradient strength in X direction
+     * Param y_edge: array representing gradient strength in Y direction
+     * Return: array same length as x or y edge array, values 0-360
+     */
+    if (x_edge.length != y_edge.length) {
+        console.log('uh oh. x_edge and y_edge are not same size for angle');
+    }
+    var angle = new Array(x_edge.length),
+        length = x_edge.length,
+        i, x, y;
+    for (i = 0; i < length; i++) {
+        x = x_edge[i];
+        y = y_edge[i];
+        radian_angle = Math.atan2(y, x); // -PI to PI
+        degree_angle = (radian_angle + Math.PI) * 180 / Math.PI; // 0 to 360
+        angle[i] = degree_angle;
+     }
+    return angle;
+}
+
 Canny.KERNEL = {
 
     sobel_y: [-1, -2, -1,
