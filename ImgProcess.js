@@ -70,6 +70,9 @@ function step4_edge_detect_y(blur_img, blur_array) {
 function step5_combine_edges(blur_img, blur_array) {
     var canv_edge = document.getElementById('canvas-edge');
     var edge_mag = CanvImg.average_2_images(edge_x, edge_y);
-    CanvImg.draw_img_on_canvas(canv_edge, edge_mag);
-    edge_mag = Canny.calculate_edge_magnitude(window.xedge, window.yedge);
+    //CanvImg.draw_img_on_canvas(canv_edge, edge_mag);
+    mag_edge = Canny.calculate_edge_magnitude(window.xedge, window.yedge);
+    mag_edge = Canny.scale_array_0_to_255(mag_edge);
+    edge_mag_img = CanvImg.create_greyscale_image_from_array(blur_img, mag_edge);
+    CanvImg.draw_img_on_canvas(canv_edge, edge_mag_img);
 }

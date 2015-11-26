@@ -46,6 +46,45 @@ Canny.calculate_edge_angle = function(x_edge, y_edge) {
     return angle;
 }
 
+Canny.scale_array_0_to_255 = function(array) {
+    /*scale full array to have a minimum value of 0, and a max value of 255.
+     * Generally useful to re-constrain an array to 0-255 for an image.
+     */
+    var minmax = Canny.find_min_and_max_values_of_array(array);
+    var min = minmax[0],
+        max = minmax[1] - min,
+        val;
+    for (var i = 0; i < array.length; i++){
+        val = array[i];
+        val -= min;
+        val *= (255/max);
+        array[i] = val;
+    }
+    return array;
+}
+
+Canny.find_min_and_max_values_of_array = function(array) {
+    var val,
+        min = 255,
+        max = 0;
+    for (var i = 0; i < array.length; i++) {
+        val = array[i];
+        if (val < min) {
+            min = val;
+        }
+        if (val > max) {
+            max = val;
+        }
+    }
+    var minmax = {
+        min: min,
+        max: max,
+        0: min,
+        1: max
+    }
+    return minmax;
+}
+
 Canny.KERNEL = {
 
     sobel_y: [-1, -2, -1,

@@ -165,9 +165,9 @@ CanvImg.create_arrays_from_image = function(im) {
      * b = data[2];
      * a = data[3];
      */
-    var r = [];
-        g = [];
-        b = [];
+    var r = [],
+        g = [],
+        b = [],
         a = [];
     for (var i = 0; i < im.data.length; i += CanvImg.NUM_COLORS) {
         r.push(im.data[i]);
