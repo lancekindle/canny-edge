@@ -34,6 +34,7 @@ Canny.calculate_edge_angle = function(x_edge, y_edge) {
         console.log('uh oh. x_edge and y_edge are not same size for angle');
     }
     var angle = new Array(x_edge.length),
+        radian_angle, degree_angle,
         length = x_edge.length,
         i, x, y;
     for (i = 0; i < length; i++) {
@@ -173,10 +174,6 @@ Canny.convolve = function(img_array, kernel, ref_img, normalize) {
         out_of_y_bounds[-1 -b] = true;
         out_of_y_bounds[height + b] = true;
     }
-    console.log(width, height);
-    console.log(kernel);
-    console.log(ref_img);
-    console.log(img_array);
     for (var y = 0; y < height; y++) {
         for (var x = 0; x < width; x++) {
             pixel = 0;
@@ -190,8 +187,6 @@ Canny.convolve = function(img_array, kernel, ref_img, normalize) {
                     // at center of kernel, instead. (probably not ideal)
                     if (out_of_bounds || out_of_x_bounds[xx]) {
                         p = img_array[x + y * width];
-                        //if (isNaN(p))
-                        //    console.log(x); console.log(y);
                     } else {
                         p = img_array[xx + yy * width];
                     }
