@@ -80,10 +80,14 @@ function step5_combine_edges(blur_img, blur_array) {
 
 function step6_color_img_according_to_angles(blur_img, blur_array) {
     angle_edge = Canny.calculate_edge_angle(window.xedge, window.yedge);
-    rgb = Colorwheel.rgb_from_magnitude_and_angle(mag_edge, angle_edge);
-    var r = rgb[0],
-        g = rgb[1],
-        b = rgb[2];
+    angle_rgb = Colorwheel.rgb_from_angle(angle_edge);
+    var r = angle_rgb[0],
+        g = angle_rgb[1],
+        b = angle_rgb[2];
+    bright_img = CanvImg.create_image_from_arrays(blur_img, r, g, b);
+    CanvImg.draw_img_on_canvas(bright_color_canv, bright_img);
+    // change in-place r, g, b arrays
+    Colorwheel.scale_rgb_with_intensity(angle_rgb, mag_edge);
     angle_colored_img = CanvImg.create_image_from_arrays(blur_img, r, g, b);
     CanvImg.draw_img_on_canvas(angle_color_canv, angle_colored_img);
 }
