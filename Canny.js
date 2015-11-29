@@ -47,6 +47,56 @@ Canny.calculate_edge_angle = function(x_edge, y_edge) {
     return angle;
 }
 
+Canny.get_splitting_indices_from_angle(angle) {
+    /*given an array of the angles in the image, categorize all angles as
+     * corresponding to one of these four different bidirections: 
+     * N-S, W-E, NE-SW, NW-SE. Angle values must be 0-360 or 0-180.
+     * Return an object that holds the bidirectional indices as properties
+     * named NS, WE, NE_SW, NW_SE
+     */
+    var degree,
+        len = angle.length,
+        NS = [],
+        WE = [],
+        NE_SW = [],
+        NW_SE = [],
+        BORDER = 45/2,
+        NORTH_BORDER1 = 90 - BORDER,
+        NORTH_BORDER2 = 90 + BORDER,
+        WEST_BORDER = 180 - BORDER,
+        EAST_BORDER = 0 + BORDER,
+    for (var i = 0; i < len; i++) {
+        degree = angle[i];
+        degree %= 180;
+        // subdivide angles
+        if (degree > NORTH_BORDER1) {
+            if (degree <= NORTH_BORDER2) {
+                NS.push(i);
+                continue;
+            }
+            if (degree > WEST_BORDER) {
+                WE.push(i);
+                continue;
+            }
+            NW_SE.push(i);
+            continue;
+        }
+        if (degree <= EAST_BORDER) {
+            WE.push(i);
+            continue;
+        }
+        NE_SW.push(i);
+        continue;
+    }
+    var angle_indices = {
+        NS: NS,
+        WE: WE,
+        NE_SW: NE_SW,
+        NW_SE: NW_SE
+    }
+    return angle_indices;
+}
+
 Canny.scale_array_0_to_255 = function(array) {
     /*scale full array to have a minimum value of 0, and a max value of 255.
      * Generally useful to re-constrain an array to 0-255 for an image.
