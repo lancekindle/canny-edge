@@ -47,7 +47,57 @@ Canny.calculate_edge_angle = function(x_edge, y_edge) {
     return angle;
 }
 
-Canny.get_splitting_indices_from_angle(angle) {
+Canny.split_array_into_four_using_bidirectional_splitter = function(ref_img, array, splitter) {
+    var NS = Canny.thin_img_array(ref_img, splitter.NS, splitter.NS_offset),
+        WE = Canny.thin_img_array(ref_img, splitter.WE, splitter.WE_offset),
+        NE_SW = Canny.thin_img_array(ref_img, splitter.NE_SW, splitter.NW_SW_offset),
+        NW_SE = Canny.thin_img_array(ref_img, splitter.NW_SE, splitter.NW_SE_offset);
+    var split_array = {
+        NS: NS,
+        WE: WE,
+        NE_SW: NE_SW,
+        NW_SE: NW_SE
+    }
+    return split_array;
+}
+
+Canny.get_array_xy_value = function(ref_img, array, x, y) {
+    if ((x == -1) || (y == -1))
+        return undefined;
+    if ((x >= ref_img.width) || (y >= ref_img.height)) {
+        return undefined;
+    }
+    return array[x + y * ref_img.height];
+}
+
+Canny.thin_img_array = function(ref_img, array, xy_offset) {
+    var x_offset = xy_offset[0],
+        y_offset = xy_offset[1],
+        len = array.length,
+        width = ref_img.width,
+        height = ref_img.height,
+        thinned = new Array(array.length),
+        i, middle, x1, y1, x2, y2;
+    thinned.fill(0);
+    for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+            i = x + y * width;
+            middle = array[i];
+            x1 = x + x_offset;
+            y1 = y + y_offset;
+            x2 = x - x_offset;
+            y2 = y - y_offset;
+            pix_1 = Canny.get_array_xy_value(ref_img, array, x1, y1) || 0;
+            pix_2 = Canny.get_array_xy_value(ref_img, array, x2, y2) || 0;
+            if ((middle > pix1) && (middle >= pix2) {
+                thinned[i] = middle;
+            }
+        }
+    }
+    return thinned;
+}
+
+Canny.get_bidirectional_splitter_from_angle = function(angle) {
     /*given an array of the angles in the image, categorize all angles as
      * corresponding to one of these four different bidirections: 
      * N-S, W-E, NE-SW, NW-SE. Angle values must be 0-360 or 0-180.
@@ -92,7 +142,12 @@ Canny.get_splitting_indices_from_angle(angle) {
         NS: NS,
         WE: WE,
         NE_SW: NE_SW,
-        NW_SE: NW_SE
+        NW_SE: NW_SE,
+        // offset = x, y direction (+ or -) in which these edges have neighbors
+        NS_offset: [0, 1],
+        WE_offset: [1, 0],
+        NE_SW_offset: [1, 1],
+        NW_SE_offset: [-1, 1]
     }
     return angle_indices;
 }
