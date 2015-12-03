@@ -64,10 +64,10 @@ function step4_edge_detect_y(blur_img, blur_array) {
     // yellow is positive y edges, blue is negative y edges
     var canv_yedge = document.getElementById('canvas-edge-y');
     CanvImg.draw_img_on_canvas(canv_yedge, edge_y);
-    setTimeout(function(){step5_combine_edges(blur_img, blur_array);}, 10);
+    setTimeout(function(){step5_calculate_edge_magnitude(blur_img, blur_array);}, 10);
 }
 
-function step5_combine_edges(blur_img, blur_array) {
+function step5_calculate_edge_magnitude(blur_img, blur_array) {
     var canv_edge = document.getElementById('canvas-edge');
     var edge_mag = CanvImg.average_2_images(edge_x, edge_y);
     //CanvImg.draw_img_on_canvas(canv_edge, edge_mag);
@@ -75,19 +75,43 @@ function step5_combine_edges(blur_img, blur_array) {
     mag_edge = Canny.scale_array_0_to_255(mag_edge);
     edge_mag_img = CanvImg.create_greyscale_image_from_array(blur_img, mag_edge);
     CanvImg.draw_img_on_canvas(canv_edge, edge_mag_img);
-    step6_color_img_according_to_angles(blur_img, blur_array);
+    step6_color_img_according_to_angles(edge_mag_img, mag_edge);
 }
 
-function step6_color_img_according_to_angles(blur_img, blur_array) {
+function step6_color_img_according_to_angles(mag_img, mag_array) {
     angle_edge = Canny.calculate_edge_angle(window.xedge, window.yedge);
     angle_rgb = Colorwheel.rgb_from_angle(angle_edge);
     var r = angle_rgb[0],
         g = angle_rgb[1],
         b = angle_rgb[2];
-    bright_img = CanvImg.create_image_from_arrays(blur_img, r, g, b);
+    bright_img = CanvImg.create_image_from_arrays(mag_img, r, g, b);
     CanvImg.draw_img_on_canvas(bright_color_canv, bright_img);
     // change in-place r, g, b arrays
     Colorwheel.scale_rgb_with_intensity(angle_rgb, mag_edge);
-    angle_colored_img = CanvImg.create_image_from_arrays(blur_img, r, g, b);
+    angle_colored_img = CanvImg.create_image_from_arrays(mag_img, r, g, b);
     CanvImg.draw_img_on_canvas(angle_color_canv, angle_colored_img);
+    step7_split_img_into_four_bidirectionals(mag_img, mag_array);
+}
+
+function step7_split_img_into_four_bidirectionals(mag_img, mag_array) {
+    splitter = Canny.get_bidirectional_splitter_from_angle(angle_edge);
+    // split_mag is the image from which we will perform actual calculations
+    split_mag = Canny.split_array_into_four_bidirections(mag_array, splitter);
+    var r = angle_rgb[0],
+        g = angle_rgb[1],
+        b = angle_rgb[2];  // these are correctly scaled rgb-values
+    // split r, g, b arrays into four and recombine r,g, &b for each
+    // bidirection to display for user
+    red_split = Canny.split_array_into_four_bidirections(r, splitter);
+    green_split = Canny.split_array_into_four_bidirections(g, splitter);
+    blue_split = Canny.split_array_into_four_bidirections(b, splitter);
+    for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
+        var direction = Canny.BIDIRECTIONS[i];
+        r = red_split[direction];
+        g = green_split[direction];
+        b = blue_split[direction];
+        var bi_color_img = CanvImg.create_image_from_arrays(mag_img, r, g, b);
+        var bi_canv = document.getElementById(direction + '_split_angle_canv');
+        CanvImg.draw_img_on_canvas(bi_canv, bi_color_img);
+    }
 }

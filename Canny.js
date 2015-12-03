@@ -6,6 +6,8 @@ Canny = {};
 (function() {
 "use strict";
 
+Canny.BIDIRECTIONS = ['NS', 'WE', 'NE_SW', 'NW_SE'];
+
 Canny.calculate_edge_magnitude = function(x_edge, y_edge) {
     if (x_edge.length != y_edge.length) {
         console.log('uh oh. x_edge and y_edge are not same size for mag');
@@ -47,18 +49,43 @@ Canny.calculate_edge_angle = function(x_edge, y_edge) {
     return angle;
 }
 
-Canny.split_array_into_four_using_bidirectional_splitter = function(ref_img, array, splitter) {
+Canny.split_and_thin_array_into_four_bidirections = function(ref_img, array, splitter) {
     var NS = Canny.thin_img_array(ref_img, splitter.NS, splitter.NS_offset),
         WE = Canny.thin_img_array(ref_img, splitter.WE, splitter.WE_offset),
-        NE_SW = Canny.thin_img_array(ref_img, splitter.NE_SW, splitter.NW_SW_offset),
+        NE_SW = Canny.thin_img_array(ref_img, splitter.NE_SW, splitter.NE_SW_offset),
         NW_SE = Canny.thin_img_array(ref_img, splitter.NW_SE, splitter.NW_SE_offset);
-    var split_array = {
+    var thinned_array = {
         NS: NS,
         WE: WE,
         NE_SW: NE_SW,
         NW_SE: NW_SE
     }
     return split_array;
+}
+
+Canny.split_array_into_four_bidirections = function(array, splitter) {
+    var split_array = {},
+        subsampled, direction;
+    for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
+        direction = Canny.BIDIRECTIONS[i];
+        subsampled = Canny.subsample_array(array, splitter[direction]);
+        split_array[direction] = subsampled;
+    }
+    return split_array;
+}
+
+Canny.subsample_array = function(array, indices) {
+    /* using an array of indices, move only the given indices from array to new
+     * array. All other values of new array are 0
+     */
+    var index,
+        subsampled = new Array(array.length);
+    subsampled.fill(0);
+    for (var i = 0; i < indices.length; i++) {
+        index = indices[i];
+        subsampled[index] = array[index];
+    }
+    return subsampled;
 }
 
 Canny.get_array_xy_value = function(ref_img, array, x, y) {
@@ -77,7 +104,7 @@ Canny.thin_img_array = function(ref_img, array, xy_offset) {
         width = ref_img.width,
         height = ref_img.height,
         thinned = new Array(array.length),
-        i, middle, x1, y1, x2, y2;
+        i, middle, x1, y1, x2, y2, pix_1, pix_2;
     thinned.fill(0);
     for (var y = 0; y < height; y++) {
         for (var x = 0; x < width; x++) {
@@ -89,7 +116,7 @@ Canny.thin_img_array = function(ref_img, array, xy_offset) {
             y2 = y - y_offset;
             pix_1 = Canny.get_array_xy_value(ref_img, array, x1, y1) || 0;
             pix_2 = Canny.get_array_xy_value(ref_img, array, x2, y2) || 0;
-            if ((middle > pix1) && (middle >= pix2) {
+            if ((middle > pix_1) && (middle >= pix_2)) {
                 thinned[i] = middle;
             }
         }
@@ -114,7 +141,7 @@ Canny.get_bidirectional_splitter_from_angle = function(angle) {
         NORTH_BORDER1 = 90 - BORDER,
         NORTH_BORDER2 = 90 + BORDER,
         WEST_BORDER = 180 - BORDER,
-        EAST_BORDER = 0 + BORDER,
+        EAST_BORDER = 0 + BORDER;
     for (var i = 0; i < len; i++) {
         degree = angle[i];
         degree %= 180;
