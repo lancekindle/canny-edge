@@ -159,15 +159,19 @@ function step6_split_img_into_four_bidirectionals(steps) {
         b = angle_rgb[2];  // these are correctly scaled rgb-values
     // split r, g, b arrays into four and recombine r,g, &b for each
     // bidirection to display for user
+    var a = new Array(r.length);
+    a.fill(CanvImg.OPAQUE);
     var red_split = Canny.split_array_into_four_bidirections(r, splitter);
     var green_split = Canny.split_array_into_four_bidirections(g, splitter);
     var blue_split = Canny.split_array_into_four_bidirections(b, splitter);
+    var alpha_split = Canny.split_array_into_four_bidirections(a, splitter);
     for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
         var direction = Canny.BIDIRECTIONS[i];
         r = red_split[direction];
         g = green_split[direction];
         b = blue_split[direction];
-        var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b);
+        a = alpha_split[direction];
+        var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, a);
         var bi_canv = document.getElementById(direction + '_split_angle_canv');
         CanvImg.draw_img_on_canvas(bi_canv, bi_color_img);
     }
@@ -179,4 +183,9 @@ function step6_split_img_into_four_bidirectionals(steps) {
         splitter: splitter
     };
     steps[6] = step6;
+    setTimeout(function(){step7_thin_split_images(steps);}, 10);
+}
+
+function step7_thin_split_images(steps) {
+    return;
 }
