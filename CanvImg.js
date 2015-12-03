@@ -106,10 +106,11 @@ CanvImg.average_2_images = function(im1, im2) {
 }
 
 CanvImg.create_image_from_arrays = function(ref_im, r, g, b, a) {
-    /* combine 3 arrays into an image. The 3 arrays given will represent, r, g,
-     * and b colors of the image. Alpha is assumed opaque.
-     * Argument must be an image that has target height and width. Any
-     * array not defined will be assumed value of 0.
+    /* combine 1-4 arrays into an image. The arrays represent, r, g, b, & a in
+     * that order.
+     * First Argument must be an image that has target height and width. Any
+     * array not defined will be assumed value of 0 (except Alpha, which
+     * assumes default opaque value)
      */
     if (r === undefined) {
         r = new Array(ref_im.data.length);
@@ -123,6 +124,10 @@ CanvImg.create_image_from_arrays = function(ref_im, r, g, b, a) {
         b = new Array(ref_im.data.length);
         b.fill(0);
     }
+    if (a === undefined) {
+        a = new Array(ref_im.data.length);
+        a.fill(CanvImg.OPAQUE);
+    }
     var im = CanvImg.new_image(ref_im),
         data = im.data,
         k = -1;
@@ -131,7 +136,7 @@ CanvImg.create_image_from_arrays = function(ref_im, r, g, b, a) {
         data[i] = r[k];
         data[i + 1] = g[k];
         data[i + 2] = b[k];
-        data[i + 3] = CanvImg.OPAQUE;
+        data[i + 3] = a[k];
     }
     return im;
 }
