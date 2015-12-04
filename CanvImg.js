@@ -59,18 +59,18 @@ CanvImg.get_canvas_img = function(canvas) {
     return ctx.getImageData(0, 0, w, h);
 }
 
+CanvImg.copy_image = function(img) {
+    var copy = CanvImg.new_image(img);
+    CanvImg.copy_imgdata(img.data, copy.data);
+    return copy;
+}
+
 CanvImg.copy_imgdata = function(src, dest) {
     // copy imgdata from src to dest by iterating over all indices
     var i;
     for (i=0; i < src.length; i++) {
         dest[i] = src[i];
     }
-}
-
-CanvImg.copy_image = function(img) {
-    var copy = CanvImg.new_image(img);
-    CanvImg.copy_imgdata(img.data, copy.data);
-    return copy;
 }
 
 CanvImg.get_pixel = function(img, x, y) {
