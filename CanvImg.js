@@ -105,6 +105,21 @@ CanvImg.average_2_images = function(im1, im2) {
     return im;
 }
 
+CanvImg.create_alpha_mask = function(array) {
+    //given an array, generate a alpha mask array. It's values are all
+    //CanvImg.BLANK (0) where array has a 0-value. Where array has any other
+    //value, the mask array will have a value of CanvImg.OPAQUE (255)
+    var len = array.length,
+        mask = new Array(len);
+    mask.fill(CanvImg.BLANK);
+    for (var i = 0; i < len; i++) {
+        if (array[i] != 0) {
+            mask[i] = CanvImg.OPAQUE;
+        }
+    }
+    return mask;
+}
+
 CanvImg.shift_img_array = function(ref_im, array, shift_x, shift_y, fill) {
     /* using an image as reference, insert and remove values in an array so
      * that it's image is shifted by x, y. When inserting values, use
@@ -113,7 +128,7 @@ CanvImg.shift_img_array = function(ref_im, array, shift_x, shift_y, fill) {
     if (fill === undefined) {
         fill = CanvImg.BLANK;
     }
-    moved = array.slice(0);  // clones array
+    var moved = array.slice(0);  // clones array
     var width = ref_im.width,
         height = ref_im.height;
     // shift positive x direction
