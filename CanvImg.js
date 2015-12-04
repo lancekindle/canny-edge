@@ -105,6 +105,55 @@ CanvImg.average_2_images = function(im1, im2) {
     return im;
 }
 
+CanvImg.shift_img_array = function(ref_im, array, shift_x, shift_y, fill) {
+    /* using an image as reference, insert and remove values in an array so
+     * that it's image is shifted by x, y given. When inserting values, use
+     * the fill parameter, which defaults to CanvImg.BLANK
+     */
+    if (fill === undefined) {
+        fill = CanvImg.BLANK;
+    }
+    moved = array.slice(0);  // clones array
+    var width = ref_im.width,
+        height = ref_im.height;
+    // shift positive x direction
+    // shifts all values over by one, then replaces values of first column with
+    // fill-value.
+    for (var x = 0; x < shift_x; x++) {
+        moved.pop();
+        moved.unshift(fill);
+        for (var y = 1; y < height; y++) {
+            moved[y * width] = fill;
+        }
+    }
+    // shift negative x direction
+    // sets first column values to fill, then shifts image 1 to left, causing
+    // all first column values to move to last column. Finally add fill value
+    // to last pixel of image
+    for (var x = 0; x > shift_x; x--) {
+        for (var y = 0; y < height; y++) {
+            moved[y * width] = fill;
+        }
+        moved.shift();
+        moved.push(fill);
+    }
+    // shift positive y direction
+    for (var y = 0; y < shift_y; y++) {
+        for (var x = 0; x < width; x++) {
+            moved.unshift(fill);
+            moved.pop();
+        }
+    }
+    //shift negative y direction
+    for (var y = 0; y > shift_y; y--) {
+        for (var x = 0; x < width; x++) {
+            moved.shift();
+            moved.push(fill);
+        }
+    }
+    return moved;
+}
+
 CanvImg.create_image_from_arrays = function(ref_im, r, g, b, a) {
     /* combine 1-4 arrays into an image. The arrays represent, r, g, b, & a in
      * that order.
