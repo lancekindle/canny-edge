@@ -161,15 +161,12 @@ function step6_split_img_into_four_bidirectionals(steps) {
     // bidirection to display for user
     var a = new Array(r.length);
     a.fill(CanvImg.OPAQUE);
-    var red_split = Canny.split_array_into_four_bidirections(r, splitter);
-    var green_split = Canny.split_array_into_four_bidirections(g, splitter);
-    var blue_split = Canny.split_array_into_four_bidirections(b, splitter);
+    // alpha_split is the only thing that'll be used in differentiating between
+    // different images. we selectively set pixels to transparent to indicate
+    // differences between angles
     var alpha_split = Canny.split_array_into_four_bidirections(a, splitter);
     for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
         var direction = Canny.BIDIRECTIONS[i];
-        r = red_split[direction];
-        g = green_split[direction];
-        b = blue_split[direction];
         a = alpha_split[direction];
         var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, a);
         var bi_canv = document.getElementById(direction + '_split_angle_canv');
@@ -177,9 +174,8 @@ function step6_split_img_into_four_bidirectionals(steps) {
     }
 
     step6 = {
-        red_split: red_split,
-        green_split: green_split,
-        blue_split: blue_split,
+        alpha_split: alpha_split,
+        split_mag: split_mag,
         splitter: splitter
     };
     steps[6] = step6;

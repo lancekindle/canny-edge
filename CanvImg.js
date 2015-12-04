@@ -107,8 +107,8 @@ CanvImg.average_2_images = function(im1, im2) {
 
 CanvImg.shift_img_array = function(ref_im, array, shift_x, shift_y, fill) {
     /* using an image as reference, insert and remove values in an array so
-     * that it's image is shifted by x, y given. When inserting values, use
-     * the fill parameter, which defaults to CanvImg.BLANK
+     * that it's image is shifted by x, y. When inserting values, use
+     * the fill parameter, which defaults to CanvImg.BLANK (0).
      */
     if (fill === undefined) {
         fill = CanvImg.BLANK;
@@ -138,6 +138,7 @@ CanvImg.shift_img_array = function(ref_im, array, shift_x, shift_y, fill) {
         moved.push(fill);
     }
     // shift positive y direction
+    // add one row of fill-values to start of array, pop() one row from end.
     for (var y = 0; y < shift_y; y++) {
         for (var x = 0; x < width; x++) {
             moved.unshift(fill);
@@ -145,6 +146,7 @@ CanvImg.shift_img_array = function(ref_im, array, shift_x, shift_y, fill) {
         }
     }
     //shift negative y direction
+    //push one row of fill-values to end of array, remove first row in array.
     for (var y = 0; y > shift_y; y--) {
         for (var x = 0; x < width; x++) {
             moved.shift();
