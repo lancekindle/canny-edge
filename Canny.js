@@ -49,27 +49,29 @@ Canny.calculate_edge_angle = function(x_edge, y_edge) {
     return angle;
 }
 
-Canny.split_and_thin_array_into_four_bidirections = function(ref_img, array, splitter) {
-    var NS = Canny.thin_img_array(ref_img, splitter.NS, splitter.NS_offset),
-        WE = Canny.thin_img_array(ref_img, splitter.WE, splitter.WE_offset),
-        NE_SW = Canny.thin_img_array(ref_img, splitter.NE_SW, splitter.NE_SW_offset),
-        NW_SE = Canny.thin_img_array(ref_img, splitter.NW_SE, splitter.NW_SE_offset);
+Canny.thin_split_array = function(ref_img, splitter) {
+    var NS = Canny.thin_image_array(ref_img, splitter.NS, splitter.NS_offset),
+        WE = Canny.thin_image_array(ref_img, splitter.WE, splitter.WE_offset),
+        NE_SW = Canny.thin_image_array(ref_img, splitter.NE_SW, splitter.NE_SW_offset),
+        NW_SE = Canny.thin_image_array(ref_img, splitter.NW_SE, splitter.NW_SE_offset);
     var thinned_array = {
         NS: NS,
         WE: WE,
         NE_SW: NE_SW,
         NW_SE: NW_SE
     }
-    return split_array;
+    return thinned_array;
 }
 
 Canny.split_array_into_four_bidirections = function(array, splitter) {
     var split_array = {},
-        subsampled, direction;
+        subsampled, direction, offset;
     for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
         direction = Canny.BIDIRECTIONS[i];
+        offset = direction + "_offset";
         subsampled = Canny.subsample_array(array, splitter[direction]);
         split_array[direction] = subsampled;
+        split_array[offset] = splitter[offset]
     }
     return split_array;
 }
@@ -97,28 +99,21 @@ Canny.get_array_xy_value = function(ref_img, array, x, y) {
     return array[x + y * ref_img.height];
 }
 
-Canny.thin_img_array = function(ref_img, array, xy_offset) {
-    var x_offset = xy_offset[0],
-        y_offset = xy_offset[1],
+Canny.thin_image_array = function(ref_img, array, xy_offset) {
+    //thins an image by comparing each pixel to a pixel above and below it in
+    //the direction specified by xy_offset. If a pixel is higher than it's
+    //neighbors, it is kept, otherwise it is discarded. All discarded values
+    //are replaced with 0.
+    var x = xy_offset[0],
+        y = xy_offset[1],
         len = array.length,
-        width = ref_img.width,
-        height = ref_img.height,
-        thinned = new Array(array.length),
-        i, middle, x1, y1, x2, y2, pix_1, pix_2;
+        thinned = new Array(len);
     thinned.fill(0);
-    for (var y = 0; y < height; y++) {
-        for (var x = 0; x < width; x++) {
-            i = x + y * width;
-            middle = array[i];
-            x1 = x + x_offset;
-            y1 = y + y_offset;
-            x2 = x - x_offset;
-            y2 = y - y_offset;
-            pix_1 = Canny.get_array_xy_value(ref_img, array, x1, y1) || 0;
-            pix_2 = Canny.get_array_xy_value(ref_img, array, x2, y2) || 0;
-            if ((middle > pix_1) && (middle >= pix_2)) {
-                thinned[i] = middle;
-            }
+    var shifted = CanvImg.shift_img_array(ref_img, array, x, y),
+        rev_shift = CanvImg.shift_img_array(ref_img, array, -x, -y);
+    for (var i = 0; i < len; i++) {
+        if ((array[i] >= shifted[i]) && (array[i] > rev_shift[i])) {
+            thinned[i] = array[i];
         }
     }
     return thinned;
