@@ -183,5 +183,19 @@ function step6_split_img_into_four_bidirectionals(steps) {
 }
 
 function step7_thin_split_images(steps) {
-    return;
+    var split_mag = steps[6].split_mag,
+        angle_rgb = steps[5].angle_rgb,
+        ref_img = steps[1].ref_img;
+    var r = angle_rgb[0],
+        g = angle_rgb[1],
+        b = angle_rgb[2];  // these are correctly scaled rgb-values
+    var thin_split_mag = Canny.thin_split_array(ref_img, split_mag);
+    for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
+        var direction = Canny.BIDIRECTIONS[i];
+        mag = thin_split_mag[direction];
+        a = CanvImg.create_alpha_mask(mag);
+        var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, a);
+        var bi_canv = document.getElementById(direction + '_thin_split_angle_canv');
+        CanvImg.draw_img_on_canvas(bi_canv, bi_color_img);
+    }
 }
