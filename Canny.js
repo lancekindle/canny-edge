@@ -49,7 +49,7 @@ Canny.calculate_edge_angle = function(x_edge, y_edge) {
     return angle;
 }
 
-Canny.thin_split_array = function(ref_img, splitter) {
+Canny.apply_thinning_to_split_array = function(ref_img, splitter) {
     var NS = Canny.thin_image_array(ref_img, splitter.NS, splitter.NS_offset),
         WE = Canny.thin_image_array(ref_img, splitter.WE, splitter.WE_offset),
         NE_SW = Canny.thin_image_array(ref_img, splitter.NE_SW, splitter.NE_SW_offset),
