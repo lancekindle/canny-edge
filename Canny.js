@@ -119,6 +119,22 @@ Canny.thin_image_array = function(ref_img, array, xy_offset) {
     return thinned;
 }
 
+Canny.combine_split_arrays = function(split_array) {
+    var direction = Canny.BIDIRECTIONS[0],
+        len = split_array[direction].length,
+        combined = new Array(len),
+        array;
+    combined.fill(0);
+    for (var d = 0; d < Canny.BIDIRECTIONS.length; d++) {
+        direction = Canny.BIDIRECTIONS[d];
+        array = split_array[direction];
+        for (var i = 0; i < len; i++) {
+            combined[i] += array[i];
+        }
+    }
+    return combined;
+}
+
 Canny.get_bidirectional_splitter_from_angle = function(angle) {
     /*given an array of the angles in the image, categorize all angles as
      * corresponding to one of these four different bidirections: 
