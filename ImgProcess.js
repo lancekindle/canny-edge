@@ -198,4 +198,16 @@ function step7_thin_split_images(steps) {
         var bi_canv = document.getElementById(direction + '_thin_split_angle_canv');
         CanvImg.draw_img_on_canvas(bi_canv, bi_color_img);
     }
+    var recombined_thin_mag = Canny.combine_split_arrays(thin_split_mag);
+    var thinned_alpha = CanvImg.create_alpha_mask(recombined_thin_mag);
+    var full_thinned_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, thinned_alpha);
+    var full_thin_canv = document.getElementById('full_thin_canv');
+    CanvImg.draw_img_on_canvas(full_thin_canv, full_thinned_color_img);
+    
+    step7 = {
+        thin_split_mag: thin_split_mag,
+        recombined_thin_mag: recombined_thin_mag,
+        thinned_alpha: thinned_alpha
+    }
+    steps[7] = step7;
 }
