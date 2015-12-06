@@ -38,7 +38,7 @@ CanvImg.draw_raw_img_on_canvas = function(canvas, raw_image) {
 
 }
 
-CanvImg.draw_img_on_canvas = function(canvas, image) {
+CanvImg.push_image_to_canvas = function(canvas, image) {
     /*resizes canvas internally so that full image is displayed. However, the
      visual size of canvas within browser is not modified.
      use this fxn to draw any image that you've modified from the original.
@@ -49,7 +49,7 @@ CanvImg.draw_img_on_canvas = function(canvas, image) {
     ctx.putImageData(image, 0, 0);
 }
 
-CanvImg.get_canvas_img = function(canvas) {
+CanvImg.get_canvas_image = function(canvas) {
     /*assumes that canvas.width & canvas.height have been set to dimensions of 
     loaded image. Will return the full image data
      */
@@ -207,7 +207,7 @@ CanvImg.create_image_from_arrays = function(ref_im, r, g, b, a) {
     return im;
 }
 
-CanvImg.create_greyscale_image_from_array = function(ref_im, array) {
+CanvImg.create_greyscale_image = function(ref_im, array) {
     /* create image from single array. Value from array will be copied to all 3
      * colors: red, green, and blue. Alpha is assumed opaque.
      * Argument must be an image that has target height and width. Any

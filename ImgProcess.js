@@ -9,7 +9,7 @@ document.getElementById('imgLoader').onchange = function handleImage(e) {
         orig_im.onload = function () {
             var orig_canv = document.getElementById('canvas');
             CanvImg.draw_raw_img_on_canvas(orig_canv, orig_im);
-            first_img = CanvImg.get_canvas_img(orig_canv);
+            first_img = CanvImg.get_canvas_image(orig_canv);
             step1_greyscale(first_img);
         }
         orig_im.src = event.target.result;
@@ -26,7 +26,7 @@ function auto_load_image() {
     orig_im.onload = function() {
         var orig_canv = document.getElementById('canvas');
         CanvImg.draw_raw_img_on_canvas(orig_canv, orig_im);
-        first_img = CanvImg.get_canvas_img(orig_canv);
+        first_img = CanvImg.get_canvas_image(orig_canv);
         step1_greyscale(first_img);
     }
     orig_im.src = "car.jpg";
@@ -35,7 +35,7 @@ function auto_load_image() {
 function step1_greyscale(img) {
     var grey_img = CanvImg.get_greyscale(img);
     var canv_grey = document.getElementById('canvas-grey');
-    CanvImg.draw_img_on_canvas(canv_grey, grey_img);
+    CanvImg.push_image_to_canvas(canv_grey, grey_img);
 
     //create a "steps" object to hold onto all variables made in each step.
     //step1 will hold variables created in step1, and can be accessed as
@@ -54,9 +54,9 @@ function step2_blur(steps) {
     img_tuple = CanvImg.create_arrays_from_image(grey_img);
     var grey = img_tuple[0];
     var blur  = Canny.convolve(grey, Canny.KERNEL.gaussian, grey_img);
-    var blur_img = CanvImg.create_greyscale_image_from_array(grey_img, blur);
+    var blur_img = CanvImg.create_greyscale_image(grey_img, blur);
     var canv_blur = document.getElementById('canvas-3');
-    CanvImg.draw_img_on_canvas(canv_blur, blur_img);
+    CanvImg.push_image_to_canvas(canv_blur, blur_img);
 
     var step2 = {
         grey: grey,
@@ -71,10 +71,10 @@ function step3_edge_detect_x(steps) {
     var blur = steps[2].blur,
         blur_img = steps[2].blur_img;
     var edge_x = Canny.convolve(blur, Canny.KERNEL.sobel_x, blur_img);
-    var edge_x_img = CanvImg.create_greyscale_image_from_array(blur_img, edge_x);
+    var edge_x_img = CanvImg.create_greyscale_image(blur_img, edge_x);
     // red color is positive x edges, cyan is negative x edges
     var canv_xedge = document.getElementById('canvas-edge-x');
-    CanvImg.draw_img_on_canvas(canv_xedge, edge_x_img);
+    CanvImg.push_image_to_canvas(canv_xedge, edge_x_img);
 
     var step3 = {
         edge_x: edge_x,
@@ -88,10 +88,10 @@ function step3_edge_detect_y(steps) {
     var blur_img = steps[2].blur_img,
         blur = steps[2].blur;
     var edge_y = Canny.convolve(blur, Canny.KERNEL.sobel_y, blur_img);
-    var edge_y_img = CanvImg.create_greyscale_image_from_array(blur_img, edge_y);
+    var edge_y_img = CanvImg.create_greyscale_image(blur_img, edge_y);
     // yellow is positive y edges, blue is negative y edges
     var canv_yedge = document.getElementById('canvas-edge-y');
-    CanvImg.draw_img_on_canvas(canv_yedge, edge_y_img);
+    CanvImg.push_image_to_canvas(canv_yedge, edge_y_img);
 
     steps[3].edge_y = edge_y;
     steps[3].edge_y_img = edge_y_img;
@@ -106,11 +106,11 @@ function step4_calculate_edge_magnitude(steps) {
         edge_y = steps[3].edge_y;
     var canv_edge = document.getElementById('canvas-edge');
     var edge_mag_img = CanvImg.average_2_images(edge_x_img, edge_y_img);
-    //CanvImg.draw_img_on_canvas(canv_edge, edge_mag);
+    //CanvImg.push_image_to_canvas(canv_edge, edge_mag);
     var edge_mag = Canny.calculate_edge_magnitude(edge_x, edge_y);
     edge_mag = Canny.scale_array_0_to_255(edge_mag);
-    var edge_mag_img = CanvImg.create_greyscale_image_from_array(blur_img, edge_mag);
-    CanvImg.draw_img_on_canvas(canv_edge, edge_mag_img);
+    var edge_mag_img = CanvImg.create_greyscale_image(blur_img, edge_mag);
+    CanvImg.push_image_to_canvas(canv_edge, edge_mag_img);
 
     var step4 = {
         edge_mag: edge_mag,
@@ -131,11 +131,11 @@ function step5_color_img_according_to_angles(steps) {
         g = angle_rgb[1],
         b = angle_rgb[2];
     var bright_img = CanvImg.create_image_from_arrays(edge_mag_img, r, g, b);
-    CanvImg.draw_img_on_canvas(bright_color_canv, bright_img);
+    CanvImg.push_image_to_canvas(bright_color_canv, bright_img);
     // change in-place r, g, b arrays
     Colorwheel.scale_rgb_with_intensity(angle_rgb, edge_mag);
     var angle_colored_img = CanvImg.create_image_from_arrays(edge_mag_img, r, g, b);
-    CanvImg.draw_img_on_canvas(angle_color_canv, angle_colored_img);
+    CanvImg.push_image_to_canvas(angle_color_canv, angle_colored_img);
 
     var step5 = {
         angle_rgb: angle_rgb,
@@ -170,7 +170,7 @@ function step6_split_img_into_four_bidirectionals(steps) {
         a = alpha_split[direction];
         var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, a);
         var bi_canv = document.getElementById(direction + '_split_angle_canv');
-        CanvImg.draw_img_on_canvas(bi_canv, bi_color_img);
+        CanvImg.push_image_to_canvas(bi_canv, bi_color_img);
     }
 
     step6 = {
@@ -196,20 +196,20 @@ function step7_thin_split_images(steps) {
         a = CanvImg.create_alpha_mask(mag);
         var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, a);
         var bi_canv = document.getElementById(direction + '_thin_split_angle_canv');
-        CanvImg.draw_img_on_canvas(bi_canv, bi_color_img);
+        CanvImg.push_image_to_canvas(bi_canv, bi_color_img);
     }
-    var combined_thin_mag = Canny.combine_split_arrays(thin_split_mag);
-    var thin_mag_img = CanvImg.create_greyscale_image_from_array(ref_img, combined_thin_mag);
-    var thinned_alpha = CanvImg.create_alpha_mask(combined_thin_mag);
+    var thin_mag = Canny.combine_split_arrays(thin_split_mag);
+    var thin_mag_img = CanvImg.create_greyscale_image(ref_img, thin_mag);
+    var thinned_alpha = CanvImg.create_alpha_mask(thin_mag);
     var full_thinned_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, thinned_alpha);
     var full_thin_canv = document.getElementById('full_color_thin_canv');
-    CanvImg.draw_img_on_canvas(full_thin_canv, full_thinned_color_img);
+    CanvImg.push_image_to_canvas(full_thin_canv, full_thinned_color_img);
     var full_mag_canv = document.getElementById('full_magnitude_thin_canv');
-    CanvImg.draw_img_on_canvas(full_mag_canv, thin_mag_img);
+    CanvImg.push_image_to_canvas(full_mag_canv, thin_mag_img);
     
     step7 = {
         thin_split_mag: thin_split_mag,
-        recombined_thin_mag: recombined_thin_mag,
+        thin_mag: thin_mag,
         thinned_alpha: thinned_alpha
     }
     steps[7] = step7;
