@@ -64,11 +64,33 @@ transparency in an image -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="full_magnitude_thin_canv" style='width:50vw;height:50vh'></canvas>
 </div>
+<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
+    <canvas id="strong_threshold_canv" style='width:50vw;height:50vh'></canvas>
+</div>
+<script>
+function threshold_changes(event) {
+    strong = 1 * strong_threshold_input.value;
+    weak = 1 * weak_threshold_input.value;
+    //call function defined in script ImgProcess.js
+    step8_threshold_thin_image(window.steps, strong, weak);
+}
+</script>
+<input id="strong_threshold_input" value=63
+onchange="threshold_changes(event)"></input>
+<input id="weak_threshold_input" value=33
+onchange="threshold_changes(event)"></input>
+<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
+    <canvas id="tracked_edges_canv" style='width:50vw;height:50vh'></canvas>
+</div>
+
+
+
 
 
 <script src="Colorwheel.js"></script>
 <script src="Canny.js"></script>
 <script src="CanvImg.js"></script>
 <script src="ImgProcess.js"></script>
+
 
 </html>

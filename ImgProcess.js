@@ -213,4 +213,36 @@ function step7_thin_split_images(steps) {
         thinned_alpha: thinned_alpha
     }
     steps[7] = step7;
+    setTimeout(function(){step8_threshold_thin_image(steps);}, 10);
 }
+
+function step8_threshold_thin_image(steps, strong, weak) {
+    if (strong === undefined)
+        strong = 63;
+    if (weak === undefined)
+        weak = strong - 30;
+    var thin_mag = steps[7].thin_mag,
+        ref_img = steps[1].ref_img;
+    var strong_mag = CanvImg.threshold_array(thin_mag, strong);
+    var weak_mag = CanvImg.threshold_array(thin_mag, weak);
+    // strong pixels are white, weak pixels are magenta (purple)
+    var color_thresh_img = CanvImg.create_image_from_arrays(ref_img, weak_mag, strong_mag, weak_mag);
+    CanvImg.push_image_to_canvas(strong_threshold_canv, color_thresh_img);
+
+    step8 = {
+        strong_mag: strong_mag,
+        weak_mag: weak_mag
+    }
+    steps[8] = step8;
+    setTimeout(function(){step9_edge_tracking(steps);}, 10);
+}
+
+function step9_edge_tracking(steps) {
+    var ref_img = steps[1].ref_img,
+        strong_mag = steps[8].strong_mag,
+        weak_mag = steps[8].weak_mag;
+    var tracked_edges = CanvImg.apply_pixel_tracking(ref_img, strong_mag, weak_mag);
+    var tracked_edges_img = CanvImg.create_greyscale_image(ref_img, tracked_edges);
+    CanvImg.push_image_to_canvas(tracked_edges_canv, tracked_edges_img);
+}
+
