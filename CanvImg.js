@@ -171,6 +171,67 @@ CanvImg.shift_img_array = function(ref_im, array, shift_x, shift_y, fill) {
     return moved;
 }
 
+CanvImg.apply_pixel_tracking = function(ref_img, strong, weak) {
+    /* given a reference image, an array of strong pixels, and an array of weak
+     * pixels, follow all strong pixels, one by one, moving in 1 of 8
+     * directions. Where a weak pixel is found neighboring a strong pixel, it
+     * is re-categorized as strong, and the search continues. All strong pixels
+     * (including re-categorized) are then returned in a new array. No arrays
+     * are modified during this operation.
+     */
+    var height = ref_img.height,
+        width = ref_img.width,
+        len = strong.length,
+        pixels_2_follow = [],
+        neighbor_shift = [[-1,-1],[0,-1],[1,-1],
+                          [-1, 0],       [1, 0],
+                          [-1, 1],[0, 1],[1, 1]],
+        neighbor_length = neighbor_shift.length,
+        strong = strong.slice(0),
+        keep = new Array(len),
+        OPAQUE = CanvImg.OPAQUE,
+        weak = weak.slice(0); // make a clone of strong and weak arrays
+    keep.fill(0);
+    var out_of_bounds = function(width, height, x, y) {
+        return (((y < 0) || (y >= height)) || ((x < 0) || (x >= width)));
+    }
+    var register_pixel = function(keep, strong, weak, width, x, y) {
+        var i = x + y * width;
+        strong[i] = 0;
+        weak[i] = 0;
+        keep[i] = OPAQUE;
+    }
+    if (len != weak.length)
+        console.log('CanvImg.follow_strong_to_weak strong.length != weak');
+    var s, xy, x, y, n, nx, ny;
+    for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+            s = strong[x + y * width];
+            if (s != 0) { // start following this pixel
+                pixels_2_follow.push([x, y]);
+                register_pixel(keep, strong, weak, width, x, y);
+            }
+            while (pixels_2_follow.length) {
+                xy = pixels_2_follow.pop();
+                x = xy[0];
+                y = xy[1];
+                for (var n = 0; n < neighbor_length; n++) {
+                    xy = neighbor_shift[n];
+                    nx = x + xy[0];
+                    ny = y + xy[1];
+                    if (out_of_bounds(width, height, nx, ny))
+                        continue;
+                    if (weak[nx + ny * width] != 0) {
+                        pixels_2_follow.push([nx, ny]);
+                        register_pixel(keep, strong, weak, width, nx, ny);
+                    }
+                }
+            }
+        }
+    }
+    return keep;
+}
+
 CanvImg.create_image_from_arrays = function(ref_im, r, g, b, a) {
     /* combine 1-4 arrays into an image. The arrays represent, r, g, b, & a in
      * that order.
