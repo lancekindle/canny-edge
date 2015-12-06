@@ -259,6 +259,20 @@ CanvImg.create_arrays_from_image = function(im) {
     return colors;
 }
 
+CanvImg.threshold_array = function(array, thresh) {
+    var len = array.length,
+        aboveThreshold,
+        thresholded = new Array(len);
+    thresholded.fill(CanvImg.OPAQUE);
+    for (var i = 0; i < len; i++) {
+        aboveThreshold = (array[i] < thresh);
+        if (aboveThreshold) {
+            thresholded[i] = CanvImg.BLANK;
+        }
+    }
+    return thresholded;
+}
+
 CanvImg.colorfly_combine_3_images = function(r, g, b) {
     /* combine 3 images together, using each image as a basis for colors r,g,b.
      * first image passed in will provide only red colors, second image provide
