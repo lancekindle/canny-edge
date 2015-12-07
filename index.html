@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html>
-<style>
-canvas { background-color: black; } <!--color all canvases black in case of
-transparency in an image -->
-</style>
 <input type="file" id="imgLoader">
-
+<style>
+canvas {position:absolute; left:1px; top:1px;}
+</style>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas" style='width:50vw;height:50vh'></canvas>
 </div>
@@ -34,33 +32,28 @@ transparency in an image -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="angle_color_canv" style='width:50vw;height:50vh'></canvas>
 </div>
+
+
+<!-- split angles -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="NS_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<canvas id="black_canvas" background-color:black; style='width:50vw;height:50vh'></canvas>
+<canvas id="NS_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<canvas id="WE_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<canvas id="NE_SW_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<canvas id="NW_SE_split_angle_canv" style='width:50vw;height:50vh'></canvas>
 </div>
+
+
+<!-- thin split angles -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="WE_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<canvas id="black_canvas2" background-color:black; style='width:50vw;height:50vh'></canvas>
+<canvas id="NS_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<canvas id="WE_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<canvas id="NE_SW_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<canvas id="NW_SE_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
 </div>
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="NE_SW_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-</div>
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="NW_SE_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-</div>
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="NS_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-</div>
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="WE_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-</div>
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="NE_SW_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-</div>
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="NW_SE_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-</div>
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="full_color_thin_canv" style='width:50vw;height:50vh'></canvas>
-</div>
+
+
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="full_magnitude_thin_canv" style='width:50vw;height:50vh'></canvas>
 </div>

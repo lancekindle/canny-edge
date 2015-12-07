@@ -155,7 +155,8 @@ function step6_split_img_into_four_bidirectionals(steps) {
     var edge_angle = steps[5].edge_angle,
         edge_mag = steps[4].edge_mag,
         angle_rgb = steps[5].angle_rgb,
-        ref_img = steps[1].ref_img;
+        ref_img = steps[1].ref_img,
+        blank_img = steps[2].blank_img;
     var splitter = Canny.get_bidirectional_splitter_from_angle(edge_angle);
     // split_mag is the image from which we will perform actual calculations
     var split_mag = Canny.split_array_into_four_bidirections(edge_mag, splitter);
@@ -166,6 +167,7 @@ function step6_split_img_into_four_bidirectionals(steps) {
     // bidirection to display for user
     var a = new Array(r.length);
     a.fill(CanvImg.OPAQUE);
+    CanvImg.push_image_to_canvas(black_canvas, blank_img);
     var alpha_split = Canny.split_array_into_four_bidirections(a, splitter);
     // I use the full-colored angle image, and adjust the alpha on each image
     // according to it's gradient strength. This makes the image look perfect
@@ -190,10 +192,12 @@ function step6_split_img_into_four_bidirectionals(steps) {
 function step7_thin_split_images(steps) {
     var split_mag = steps[6].split_mag,
         angle_rgb = steps[5].angle_rgb,
-        ref_img = steps[1].ref_img;
+        ref_img = steps[1].ref_img,
+        blank_img = steps[2].blank_img;
     var r = angle_rgb[0],
         g = angle_rgb[1],
         b = angle_rgb[2];
+    CanvImg.push_image_to_canvas(black_canvas2, blank_img);
     var thin_split_mag = Canny.apply_thinning_to_split_array(ref_img, split_mag);
     for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
         var direction = Canny.BIDIRECTIONS[i];
