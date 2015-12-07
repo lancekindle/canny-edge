@@ -166,14 +166,14 @@ function step6_split_img_into_four_bidirectionals(steps) {
     // bidirection to display for user
     var a = new Array(r.length);
     a.fill(CanvImg.OPAQUE);
-    // alpha_split is the only thing that'll be used in differentiating between
-    // different images. we selectively set pixels to transparent to indicate
-    // differences between angles
     var alpha_split = Canny.split_array_into_four_bidirections(a, splitter);
+    // I use the full-colored angle image, and adjust the alpha on each image
+    // according to it's gradient strength. This makes the image look perfect
+    // if cast on a black background
     for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
         var direction = Canny.BIDIRECTIONS[i];
-        a = alpha_split[direction];
-        var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, a);
+        var mag = split_mag[direction];
+        var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, mag);
         var bi_canv = document.getElementById(direction + '_split_angle_canv');
         CanvImg.push_image_to_canvas(bi_canv, bi_color_img);
     }
@@ -198,24 +198,18 @@ function step7_thin_split_images(steps) {
     for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
         var direction = Canny.BIDIRECTIONS[i];
         var mag = thin_split_mag[direction];
-        a = CanvImg.create_alpha_mask(mag);
-        var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, a);
+        var bi_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, mag);
         var bi_canv = document.getElementById(direction + '_thin_split_angle_canv');
         CanvImg.push_image_to_canvas(bi_canv, bi_color_img);
     }
     var thin_mag = Canny.combine_split_arrays(thin_split_mag);
     var thin_mag_img = CanvImg.create_greyscale_image(ref_img, thin_mag);
-    var thinned_alpha = CanvImg.create_alpha_mask(thin_mag);
-    var full_thinned_color_img = CanvImg.create_image_from_arrays(ref_img, r, g, b, thinned_alpha);
-    var full_thin_canv = document.getElementById('full_color_thin_canv');
-    CanvImg.push_image_to_canvas(full_thin_canv, full_thinned_color_img);
     var full_mag_canv = document.getElementById('full_magnitude_thin_canv');
     CanvImg.push_image_to_canvas(full_mag_canv, thin_mag_img);
     
     step7 = {
         thin_split_mag: thin_split_mag,
-        thin_mag: thin_mag,
-        thinned_alpha: thinned_alpha
+        thin_mag: thin_mag
     }
     steps[7] = step7;
     setTimeout(function(){step8_threshold_thin_image(steps);}, 10);
