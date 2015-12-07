@@ -20,8 +20,19 @@ Colorwheel.scale_rgb_with_intensity = function(rgb, intensity_array) {
      * the rgb arrays @ index i will be 0. If intensity_array[i] = 127, then the
      * rgb values will be scaled appropriately. In this case, 127/255 ~ 1/2, so
      * the rgb values will be scaled to a half of their previous values
-     * Return nothing; arrays are modified in-place
+     * return new rgb object with 3 arrays: r, g, b
      */
+    var r = rgb[0].slice(0),
+        g = rgb[1].slice(0),
+        b = rgb[2].slice(0),
+        rgb = {
+            0: r,
+            1: g,
+            2: b,
+            red: r,
+            green: g,
+            blue: b
+        };
     var len = intensity_array.length,
         scale,
         min = 0,
@@ -35,6 +46,7 @@ Colorwheel.scale_rgb_with_intensity = function(rgb, intensity_array) {
         green[i] *= scale;
         blue[i] *= scale;
     }
+    return rgb
 }
 
 Colorwheel.rgb_from_angle = function(angle_array) {

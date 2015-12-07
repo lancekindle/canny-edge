@@ -132,13 +132,16 @@ function step5_color_img_according_to_angles(steps) {
         b = angle_rgb[2];
     var bright_img = CanvImg.create_image_from_arrays(edge_mag_img, r, g, b);
     CanvImg.push_image_to_canvas(bright_color_canv, bright_img);
-    // change in-place r, g, b arrays
-    Colorwheel.scale_rgb_with_intensity(angle_rgb, edge_mag);
+    var scaled_angle_rgb = Colorwheel.scale_rgb_with_intensity(angle_rgb, edge_mag);
+    r = scaled_angle_rgb[0],
+    g = scaled_angle_rgb[1],
+    b = scaled_angle_rgb[2];
     var angle_colored_img = CanvImg.create_image_from_arrays(edge_mag_img, r, g, b);
     CanvImg.push_image_to_canvas(angle_color_canv, angle_colored_img);
 
     var step5 = {
         angle_rgb: angle_rgb,
+        scaled_angle_rgb: scaled_angle_rgb,
         edge_angle: edge_angle,
         bright_img: bright_img
     };
