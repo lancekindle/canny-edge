@@ -51,17 +51,19 @@ function step1_greyscale(img) {
 
 function step2_blur(steps) {
     var grey_img = steps[1].grey_img;
-    img_tuple = CanvImg.create_arrays_from_image(grey_img);
+    var img_tuple = CanvImg.create_arrays_from_image(grey_img);
     var grey = img_tuple[0];
     var blur  = Canny.convolve(grey, Canny.KERNEL.gaussian, grey_img);
     var blur_img = CanvImg.create_greyscale_image(grey_img, blur);
     var canv_blur = document.getElementById('canvas-3');
     CanvImg.push_image_to_canvas(canv_blur, blur_img);
+    var blank_img = CanvImg.create_greyscale_image(grey_img, new Array(grey.length));
 
     var step2 = {
         grey: grey,
         blur: blur,
-        blur_img: blur_img
+        blur_img: blur_img,
+        blank_img: blank_img
     };
     steps[2] = step2;
     setTimeout(function() {step3_edge_detect_x(steps);}, 10);
@@ -191,7 +193,7 @@ function step7_thin_split_images(steps) {
         ref_img = steps[1].ref_img;
     var r = angle_rgb[0],
         g = angle_rgb[1],
-        b = angle_rgb[2];  // these are correctly scaled rgb-values
+        b = angle_rgb[2];
     var thin_split_mag = Canny.apply_thinning_to_split_array(ref_img, split_mag);
     for (var i = 0; i < Canny.BIDIRECTIONS.length; i++) {
         var direction = Canny.BIDIRECTIONS[i];
