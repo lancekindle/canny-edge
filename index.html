@@ -41,8 +41,10 @@ function move_canvas_once(event, ymove, xmove) {
     var t = 600, //300 millisecond transition time
         x = xmove / t,
         y = ymove / t,
-        left = 0,  //parseInt(element.left),
-        top = 0; //parseInt(element.top);
+        original_left = parseInt(element.style.left),
+        original_top = parseInt(element.style.top),
+        left = original_left,
+        top = original_top;
     console.log(element);
     var increment_element_position = function() {
         left += x;
@@ -52,6 +54,13 @@ function move_canvas_once(event, ymove, xmove) {
         element.style.left = left + "%";
         if (t != 0) {
             setTimeout(function() { increment_element_position(); }, 3);
+        } else { // runs right before fxn ends
+            //precisely align image
+            element.style.top = (original_top + ymove) + "%";
+            element.style.left = (original_left + xmove) + "%";
+            //set fxn to move image back to original position
+            element.onclick = function(event) {move_canvas_once(event, -ymove, -xmove);
+                console.log(element.onclick); };
         }
     }
     setTimeout(function() { increment_element_position(); }, 3);
