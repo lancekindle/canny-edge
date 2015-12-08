@@ -36,7 +36,7 @@ canvas {position:absolute; left:1px; top:1px;}
 <script>
 ZINDEX = 6;
 function move_canvas_once(event, ymove, xmove) {
-    var element = event.srcElement;
+    var element = event.target;
     element.onclick="return true;"; // prevent more clicks from happening on this element
     //move element down (z-index) if it is separating from group
     //if image is heading back into the group, set z-index to global ++ZINDEX
