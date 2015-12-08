@@ -34,14 +34,28 @@ canvas {position:absolute; left:1px; top:1px;}
 </div>
 
 <script>
+ZINDEX = 6;
 function move_canvas_once(event, ymove, xmove) {
     var element = event.srcElement;
     element.onclick="return true;"; // prevent more clicks from happening on this element
+    //move element down (z-index) if it is separating from group
+    //if image is heading back into the group, set z-index to global ++ZINDEX
+    var eparent = element.parentElement;
+    var firstchild = eparent.children[0];
+    if (element["z-index"] == 0) {
+        element["z-index"] = ++ZINDEX;
+        // re-order elements so that this one is last (highest)
+        eparent.appendChild(element);
+    } else {
+        element["z-index"] = 0;
+        // re-order elements so that this one is first (lowest)
+        eparent.insertBefore(element, firstchild);
+    }
     //ymove and xmove are %s to move
     var t = 600, //300 millisecond transition time
         x = xmove / t,
         y = ymove / t,
-        original_left = parseInt(element.style.left),
+        original_left = parseInt(element.style.left),  // "50%" => 50
         original_top = parseInt(element.style.top),
         left = original_left,
         top = original_top;
@@ -67,18 +81,19 @@ function move_canvas_once(event, ymove, xmove) {
     return true; // return false to prevent event from reaching other layers
 }
 </script>
+
 <!-- split angles -->
 <div class="canvas-container" style="width: 80vw; height: 80vh; position: relative; -webkit-user-select: none;">
 <canvas id="black_canvas" style='width:100%;height:100%'></canvas>
     <div class="canvas-container" style='width:50%;height:50%; position:relative;left:25%;top:25%;'>
         <canvas id="NS_split_angle_canv"
-            onclick="move_canvas_once(event,50,50);"; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
+            onclick="move_canvas_once(event,50,50);"; z-index:2; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
         <canvas id="WE_split_angle_canv"
-            onclick="move_canvas_once(event,-50,50);"; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
+            onclick="move_canvas_once(event,-50,50);"; z-index:3; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
         <canvas id="NE_SW_split_angle_canv"
-            onclick="move_canvas_once(event,50,-50);"; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
+            onclick="move_canvas_once(event,50,-50);"; z-index:4; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
         <canvas id="NW_SE_split_angle_canv"
-                onclick="move_canvas_once(event,-50,-50);"; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
+                onclick="move_canvas_once(event,-50,-50);"; z-index:5; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
     </div>
 </div>
 
