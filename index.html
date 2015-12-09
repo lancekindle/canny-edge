@@ -97,14 +97,18 @@ function move_canvas_once(event, ymove, xmove) {
     </div>
 </div>
 
-
-<!-- thin split angles -->
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-<canvas id="black_canvas2" background-color:black; style='width:50vw;height:50vh'></canvas>
-<canvas id="NS_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-<canvas id="WE_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-<canvas id="NE_SW_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
-<canvas id="NW_SE_thin_split_angle_canv" style='width:50vw;height:50vh'></canvas>
+<div class="canvas-container" style="width: 80vw; height: 80vh; position: relative; -webkit-user-select: none;">
+<canvas id="black_canvas2" style='width:100%;height:100%'></canvas>
+    <div class="canvas-container" style='width:50%;height:50%; position:relative;left:25%;top:25%;'>
+        <canvas id="NS_thin_split_angle_canv"
+            onclick="move_canvas_once(event,50,50);"; z-index:2; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
+        <canvas id="WE_thin_split_angle_canv"
+            onclick="move_canvas_once(event,-50,50);"; z-index:3; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
+        <canvas id="NE_SW_thin_split_angle_canv"
+            onclick="move_canvas_once(event,50,-50);"; z-index:4; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
+        <canvas id="NW_SE_thin_split_angle_canv"
+                onclick="move_canvas_once(event,-50,-50);"; z-index:5; style='width:100%;height:100%;position:absolute;left:0px;top:0px;'></canvas>
+    </div>
 </div>
 
 
