@@ -111,25 +111,81 @@ function move_canvas_once(event, ymove, xmove) {
     </div>
 </div>
 
-
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="full_magnitude_thin_canv" style='width:50vw;height:50vh'></canvas>
 </div>
-<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
-    <canvas id="strong_threshold_canv" style='width:50vw;height:50vh'></canvas>
-</div>
+
 <script>
-function threshold_changes(event) {
-    strong = 1 * strong_threshold_input.value;
-    weak = 1 * weak_threshold_input.value;
+function get_strong_weak_input() {
+    strong = parseInt(strong_threshold_input.value);
+    weak = parseInt(weak_threshold_input.value);
+    return [strong, weak];
+}
+
+function set_strong_weak_values(strong, weak) {
+    // if only one value is defined, check that the other is in bounds and
+    // correct value if necessary
+    if (weak === undefined) {
+        sw = get_strong_weak_input();
+        weak = sw[1];
+        if (strong <= weak)
+            weak = strong - 1;
+    }
+    if (strong === undefined) {
+        sw = get_strong_weak_input();
+        strong = sw[0];
+        if (strong <= weak)
+            strong = weak + 1;
+    }
+    // now set strong and weak values
+    strong_threshold_slider.value = strong;
+    strong_threshold_input.value = strong;
+    weak_threshold_slider.value = weak;
+    weak_threshold_input.value = weak;
+}
+
+function apply_threshold_changes(event) {
+    sw = get_strong_weak_input();
+    strong = sw[0];
+    weak = sw[1];
     //call function defined in script ImgProcess.js
     step8_threshold_thin_image(window.steps, strong, weak);
 }
+
+function update_weak_threshold(event) {
+    var e = event.target;
+    var weak = parseInt(e.value);
+    set_strong_weak_values(undefined, weak);
+    apply_threshold_changes(event);
+}
+
+function update_strong_threshold(event) {
+    var e = event.target;
+    var strong = parseInt(e.value);
+    set_strong_weak_values(strong, undefined);
+    apply_threshold_changes(event);
+}
+
+
 </script>
-<input id="strong_threshold_input" value=63
-onchange="threshold_changes(event)"></input>
-<input id="weak_threshold_input" value=33
-onchange="threshold_changes(event)"></input>
+<div id="threshold_input_holder">
+    <div id="strong_threshold_holder">
+        <input id="strong_threshold_slider" type="range" min=1 max=255 value=63
+            style="position:relative;" onchange="update_strong_threshold(event);">
+        <input id="strong_threshold_input" value=63
+        onchange="update_strong_threshold(event)"></input>
+    </div>
+    <div id="weak_threshold_holder">
+        <input id="weak_threshold_slider" type="range" min=0 max=254 value=33
+            style="position:relative;" onchange="update_weak_threshold(event);">
+        <input id="weak_threshold_input" value=33
+        onchange="update_weak_threshold(event)"></input>
+    </div>
+</div>
+
+<div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
+    <canvas id="strong_threshold_canv" style='width:50vw;height:50vh'></canvas>
+</div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="tracked_edges_canv" style='width:50vw;height:50vh'></canvas>
 </div>
