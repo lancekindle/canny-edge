@@ -59,7 +59,6 @@ function move_canvas_once(event, ymove, xmove) {
         original_top = parseInt(element.style.top),
         left = original_left,
         top = original_top;
-    console.log(element);
     var increment_element_position = function() {
         left += x;
         top += y;
@@ -73,8 +72,7 @@ function move_canvas_once(event, ymove, xmove) {
             element.style.top = (original_top + ymove) + "%";
             element.style.left = (original_left + xmove) + "%";
             //set fxn to move image back to original position
-            element.onclick = function(event) {move_canvas_once(event, -ymove, -xmove);
-                console.log(element.onclick); };
+            element.onclick = function(event) { move_canvas_once(event, -ymove, -xmove); };
         }
     }
     setTimeout(function() { increment_element_position(); }, 3);
@@ -165,9 +163,8 @@ function update_strong_threshold(event) {
     set_strong_weak_values(strong, undefined);
     apply_threshold_changes(event);
 }
-
-
 </script>
+
 <div id="threshold_input_holder">
     <div id="strong_threshold_holder">
         <input id="strong_threshold_slider" type="range" min=1 max=255 value=63
@@ -189,8 +186,6 @@ function update_strong_threshold(event) {
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="tracked_edges_canv" style='width:50vw;height:50vh'></canvas>
 </div>
-
-
 
 
 
