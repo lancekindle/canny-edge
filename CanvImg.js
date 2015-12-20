@@ -424,4 +424,11 @@ CanvImg.get_greyscale = function(img) {
     return img;
 }
 
+CanvImg.get_pixel_rgba_from_canvas = function(canv, x, y) {
+	var ctx = canv.getContext('2d');
+	var pixel = ctx.getImageData(x, y, 1, 1);
+	var rgba = pixel.data;  // array of length 4
+	return rgba
+}
+
 })();
