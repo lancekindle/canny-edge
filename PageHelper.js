@@ -4,6 +4,42 @@ PageHelper = {};
 (function() {
 "use strict";
 
+// ====================== Draw arrow indicating gradient direction ================
+PageHelper.draw_illustrative_arrow = function(event, dx_canv, dy_canv, angle_color_canv){
+	// draw arrow on event-originating canvas, determining angle from dx_canv (containing x-data)
+	// and dy_canvas (containing y-data), and coloring the arrow using angle_color_canv data.
+	// (in this case, the data is obtained from the same x, y coordinates as on the target canvas)
+	var x = event.layerX;
+	var y = event.layerY;
+	var canv = event.target;
+	var ctx = canv.getContext('2d');
+	ctx.clearRect(0, 0, canv.width, canv.height);
+	ctx.beginPath();
+	ctx.lineWidth = 10;
+	var x_final = x + dx;
+	var y_final = y + dy;
+	var angle = Math.atan2(dy, dx);
+	var dx = 0,
+		dy = 0,
+		rgba;
+	if (dx_canv !== undefined) {
+		rgba = CanvImg.get_rgba_from_canv(dx_canv, x, y);
+		dx = Math.max.apply(Math, rgba);
+	}
+	if (dy_canv !== undefined) {
+		rgba = CanvImg.get_rgba_from_canv(dy_canv, x, y);
+		dy = Math.max.apply(Math, rgba);
+	}
+	ctx.strokeStyle = 'white';
+	if (angle_color_canv !== undefined) {
+		rgba = CanvImg.get_rgba_from_canv(angle_color_canv, x, y);
+		ctx.strokeStyle = 'rgba(' + rgba + ')';  // ex: rgba(230,0,230,255)
+	}
+	ctx.moveTo(x, y);
+	ctx.lineTo(x_final, y_final);
+	ctx.stroke();
+}
+
 // =================== Moving edge-highlighted split images ==================
 PageHelper.move_canvas_once = function(event, ymove, xmove) {
     var element = event.target;
