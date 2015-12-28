@@ -35,7 +35,6 @@ CanvImg.draw_raw_img_on_canvas = function(canvas, raw_image) {
     canvas.height = raw_image.height;
     var ctx = canvas.getContext('2d');
     ctx.drawImage(raw_image, 0, 0);
-
 }
 
 CanvImg.push_image_to_canvas = function(canvas, image) {
@@ -90,6 +89,12 @@ CanvImg.set_pixel = function(img, x, y, value) {
     img.data[x + y] = value;
     img.data[x + 1 + y] = value;
     img.data[x + 2 + y] = value;
+}
+
+CanvImg.get_pixel_from_array = function(array, width, x, y) {
+    // given a 1-dimensional array representing an image, return the pixel
+    // value @ (x, y) knowing width of image
+    return array[x + y * width];
 }
 
 CanvImg.average_2_images = function(im1, im2) {
