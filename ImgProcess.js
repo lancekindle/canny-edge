@@ -75,7 +75,7 @@ function step3_edge_detect_x(steps) {
     var edge_x = Canny.convolve(blur, Canny.KERNEL.sobel_x, blur_img);
     var edge_x_img = CanvImg.create_greyscale_image(blur_img, edge_x);
     // red color is positive x edges, cyan is negative x edges
-    var canv_xedge = document.getElementById('canvas-edge-x');
+    var canv_xedge = document.getElementById('canvas_edge_x');
     CanvImg.push_image_to_canvas(canv_xedge, edge_x_img);
 
     var step3 = {
@@ -92,7 +92,7 @@ function step3_edge_detect_y(steps) {
     var edge_y = Canny.convolve(blur, Canny.KERNEL.sobel_y, blur_img);
     var edge_y_img = CanvImg.create_greyscale_image(blur_img, edge_y);
     // yellow is positive y edges, blue is negative y edges
-    var canv_yedge = document.getElementById('canvas-edge-y');
+    var canv_yedge = document.getElementById('canvas_edge_y');
     CanvImg.push_image_to_canvas(canv_yedge, edge_y_img);
 
     steps[3].edge_y = edge_y;
@@ -106,7 +106,7 @@ function step4_calculate_edge_magnitude(steps) {
         edge_y_img = steps[3].edge_y_img,
         edge_x = steps[3].edge_x,
         edge_y = steps[3].edge_y;
-    var canv_edge = document.getElementById('canvas-edge');
+    var canv_edge = document.getElementById('canvas_edge');
     var edge_mag_img = CanvImg.average_2_images(edge_x_img, edge_y_img);
     //CanvImg.push_image_to_canvas(canv_edge, edge_mag);
     var edge_mag = Canny.calculate_edge_magnitude(edge_x, edge_y);
