@@ -23,34 +23,54 @@ canvas {position:absolute; left:1px; top:1px;}
 <!-- draw arrows indicating direction / strength on images -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge_x" style='width:50vw;height:50vh'></canvas>
-    <canvas id="x_overlay_canvas" style='width:100%;height:100%'
-        onclick="PageHelper.draw_illustrative_arrow(event, steps[3].edge_x,
-        undefined, undefined);">
-    </canvas>
+    <canvas id="x_overlay_canvas" style='width:100%;height:100%'></canvas>
+    <script>
+    x_overlay_canvas.addEventListener('mousemove', 
+        function(event) {
+            PageHelper.draw_illustrative_arrow(event, steps[3].edge_x,
+            undefined, undefined);
+        }
+    );
+    </script>
 </div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge_y" style='width:50vw;height:50vh'></canvas>
-    <canvas id="y_overlay_canvas" style='width:100%;height:100%'
-        onclick="PageHelper.draw_illustrative_arrow(event, undefined,
-        steps[3].edge_y, undefined);">
-    </canvas>
+    <canvas id="y_overlay_canvas" style='width:100%;height:100%'></canvas>
+    <script>
+    y_overlay_canvas.addEventListener('mousemove', 
+        function(event) {
+            PageHelper.draw_illustrative_arrow(event, undefined,
+            steps[3].edge_y, undefined);
+        }
+    );
+    </script>
 </div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge" style='width:50vw;height:50vh'></canvas>
-    <canvas id="edge_overlay_canvas" style='width:100%;height:100%'
-        onclick="PageHelper.draw_illustrative_arrow(event, steps[3].edge_x,
-        steps[3].edge_y, undefined);">
-    </canvas>
+    <canvas id="edge_overlay_canvas" style='width:100%;height:100%'></canvas>
+    <script>
+    edge_overlay_canvas.addEventListener('mousemove', 
+        function(event) {
+            PageHelper.draw_illustrative_arrow(event, steps[3].edge_x,
+            steps[3].edge_y, undefined);
+        }
+    );
+    </script>
 </div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="bright_color_canv" style='width:50vw;height:50vh'></canvas>
 </div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="angle_color_canv" style='width:50vw;height:50vh'></canvas>
-    <canvas id="full_edge_overlay_canvas" style='width:100%;height:100%'
-        onclick="PageHelper.draw_illustrative_arrow(event, steps[3].edge_x,
-        steps[3].edge_y, bright_color_canv);">
-    </canvas>
+    <canvas id="full_edge_overlay_canvas" style='width:100%;height:100%'></canvas>
+    <script>
+    full_edge_overlay_canvas.addEventListener('mousemove', 
+        function(event) {
+            PageHelper.draw_illustrative_arrow(event, steps[3].edge_x,
+            steps[3].edge_y, bright_color_canv);
+        }
+    );
+    </script>
 </div>
 
 <!-- split angles -->
