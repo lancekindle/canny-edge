@@ -12,32 +12,50 @@ PageHelper.draw_illustrative_arrow = function(event, dx_canv, dy_canv, angle_col
 	var x = event.layerX;
 	var y = event.layerY;
 	var canv = event.target;
-	var ctx = canv.getContext('2d');
-	ctx.clearRect(0, 0, canv.width, canv.height);
-	ctx.beginPath();
-	ctx.lineWidth = 10;
-	var x_final = x + dx;
-	var y_final = y + dy;
 	var angle = Math.atan2(dy, dx);
 	var dx = 0,
 		dy = 0,
-		rgba;
+		rgba, valid_canvas;
+	if (dx_canv !== undefined)
+        valid_canvas = dx_canv;
+	if (dy_canv !== undefined)
+        valid_canvas = dy_canv;
+    //make sure canvas is same size as image it overlays
+    var width = valid_canvas.width,
+        height = valid_canvas.height;
+    canv.width = width;
+    canv.height = height;
+    //actual height and width in browser is different, which influences x, y
+    //scale x and y with the same scale of the target canvas
+    x = Math.round(width / canv.clientWidth * x);
+    y = Math.round(height / canv.clientHeight * y);
+    //get x, y data from canvases
 	if (dx_canv !== undefined) {
-		rgba = CanvImg.get_rgba_from_canv(dx_canv, x, y);
-		dx = Math.max.apply(Math, rgba);
+		rgba = CanvImg.get_pixel_rgba_from_canvas(dx_canv, x, y);
+		dx = Math.max(rgba[0], rgba[1], rgba[2]);
 	}
 	if (dy_canv !== undefined) {
-		rgba = CanvImg.get_rgba_from_canv(dy_canv, x, y);
-		dy = Math.max.apply(Math, rgba);
+		rgba = CanvImg.get_pixel_rgba_from_canvas(dy_canv, x, y);
+		dy = Math.max(rgba[0], rgba[1], rgba[2]);
 	}
-	ctx.strokeStyle = 'white';
+	var ctx = canv.getContext('2d');
+    //set line color
+	ctx.strokeStyle = 'rgba(255,255,255,255)';
 	if (angle_color_canv !== undefined) {
-		rgba = CanvImg.get_rgba_from_canv(angle_color_canv, x, y);
+		rgba = CanvImg.get_pixel_rgba_from_canvas(angle_color_canv, x, y);
 		ctx.strokeStyle = 'rgba(' + rgba + ')';  // ex: rgba(230,0,230,255)
 	}
-	ctx.moveTo(x, y);
-	ctx.lineTo(x_final, y_final);
-	ctx.stroke();
+    //clear canvas and draw new arrow
+    ctx.clearRect(0, 0, width, height);
+    //set width of line to be 2% the average dimension of canvas 
+	ctx.lineWidth = Math.round(0.02 * (height + width) / 2);
+	var x_final = x + dx;
+	var y_final = y + dy;
+    var path = new Path2D();
+    path.moveTo(x, y);
+    path.lineTo(x_final, y_final);
+    path.moveTo(x, y);
+    ctx.stroke(path);
 }
 
 // =================== Moving edge-highlighted split images ==================

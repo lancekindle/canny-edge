@@ -23,19 +23,34 @@ canvas {position:absolute; left:1px; top:1px;}
 <!-- draw arrows indicating direction / strength on images -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge_x" style='width:50vw;height:50vh'></canvas>
+    <canvas id="x_overlay_canvas" style='width:100%;height:100%'
+        onclick="PageHelper.draw_illustrative_arrow(event, canvas_edge_x,
+        undefined, undefined);">
+    </canvas>
 </div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge_y" style='width:50vw;height:50vh'></canvas>
+    <canvas id="y_overlay_canvas" style='width:100%;height:100%'
+        onclick="PageHelper.draw_illustrative_arrow(event, undefined,
+        canvas_edge_y, undefined);">
+    </canvas>
 </div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge" style='width:50vw;height:50vh'></canvas>
+    <canvas id="edge_overlay_canvas" style='width:100%;height:100%'
+        onclick="PageHelper.draw_illustrative_arrow(event, canvas_edge_x,
+        canvas_edge_y, undefined);">
+    </canvas>
 </div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="bright_color_canv" style='width:50vw;height:50vh'></canvas>
 </div>
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="angle_color_canv" style='width:50vw;height:50vh'></canvas>
-    <canvas id="full_edge_overlay_canvas" style='width:100%;height:100%'></canvas>
+    <canvas id="full_edge_overlay_canvas" style='width:100%;height:100%'
+        onclick="PageHelper.draw_illustrative_arrow(event, canvas_edge_x,
+        canvas_edge_y, bright_color_canv);">
+    </canvas>
 </div>
 
 <!-- split angles -->
