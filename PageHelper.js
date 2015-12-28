@@ -5,9 +5,9 @@ PageHelper = {};
 "use strict";
 
 // ====================== Draw arrow indicating gradient direction ================
-PageHelper.draw_illustrative_arrow = function(event, dx_canv, dy_canv, angle_color_canv){
-	// draw arrow on event-originating canvas, determining angle from dx_canv (containing x-data)
-	// and dy_canvas (containing y-data), and coloring the arrow using angle_color_canv data.
+PageHelper.draw_illustrative_arrow = function(event, dx_array, dy_array, angle_color_canv){
+	// draw arrow on event-originating canvas, determining angle from dx_array (containing x-data)
+	// and dy_arrayas (containing y-data), and coloring the arrow using angle_color_canv data.
 	// (in this case, the data is obtained from the same x, y coordinates as on the target canvas)
 	var x = event.layerX;
 	var y = event.layerY;
@@ -15,11 +15,8 @@ PageHelper.draw_illustrative_arrow = function(event, dx_canv, dy_canv, angle_col
 	var angle = Math.atan2(dy, dx);
 	var dx = 0,
 		dy = 0,
-		rgba, valid_canvas;
-	if (dx_canv !== undefined)
-        valid_canvas = dx_canv;
-	if (dy_canv !== undefined)
-        valid_canvas = dy_canv;
+		rgba,
+        valid_canvas = document.getElementById('canvas');
     //make sure canvas is same size as image it overlays
     var width = valid_canvas.width,
         height = valid_canvas.height;
@@ -30,13 +27,11 @@ PageHelper.draw_illustrative_arrow = function(event, dx_canv, dy_canv, angle_col
     x = Math.round(width / canv.clientWidth * x);
     y = Math.round(height / canv.clientHeight * y);
     //get x, y data from canvases
-	if (dx_canv !== undefined) {
-		rgba = CanvImg.get_pixel_rgba_from_canvas(dx_canv, x, y);
-		dx = Math.max(rgba[0], rgba[1], rgba[2]);
+	if (dx_array !== undefined) {
+        dx = CanvImg.get_pixel_from_array(dx_array, width, x, y);
 	}
-	if (dy_canv !== undefined) {
-		rgba = CanvImg.get_pixel_rgba_from_canvas(dy_canv, x, y);
-		dy = Math.max(rgba[0], rgba[1], rgba[2]);
+	if (dy_array !== undefined) {
+        dy = CanvImg.get_pixel_from_array(dy_array, width, x, y);
 	}
 	var ctx = canv.getContext('2d');
     //set line color
