@@ -7,20 +7,24 @@ canvas {position:absolute; left:1px; top:1px;}
 
 <script src="PageHelper.js"></script>
 
+<!-- full-color, original image -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas" style='width:50vw;height:50vh'></canvas>
 </div>
 
+<!--greyscale image -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas-grey" style='width:50vw;height:50vh'></canvas>
 </div>
 
 
+<!--blurred image after convolution with 5x5 gaussian kernel -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas-3" style='width:50vw;height:50vh'></canvas>
 </div>
 
-<!-- draw arrows indicating direction / strength on images -->
+<!-- greyscale image shows gradient strength of pixels in X direction only.
+    Interactive. -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge_x" style='width:50vw;height:50vh'></canvas>
     <canvas id="x_overlay_canvas" style='width:100%;height:100%'></canvas>
@@ -33,6 +37,8 @@ canvas {position:absolute; left:1px; top:1px;}
     );
     </script>
 </div>
+<!--greyscale image shows gradient strength of pixels in Y direction only.
+    Interactive. -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge_y" style='width:50vw;height:50vh'></canvas>
     <canvas id="y_overlay_canvas" style='width:100%;height:100%'></canvas>
@@ -45,6 +51,8 @@ canvas {position:absolute; left:1px; top:1px;}
     );
     </script>
 </div>
+<!--greyscale image shows gradient strength of every pixel on image. Hovering
+    over a pixel also shows gradient direction and strength -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="canvas_edge" style='width:50vw;height:50vh'></canvas>
     <canvas id="edge_overlay_canvas" style='width:100%;height:100%'></canvas>
@@ -57,9 +65,14 @@ canvas {position:absolute; left:1px; top:1px;}
     );
     </script>
 </div>
+
+<!--colored image shows gradient direction of every pixel in image -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="bright_color_canv" style='width:50vw;height:50vh'></canvas>
 </div>
+
+<!--fully-colored image shows both gradient strength and gradient direction.
+    allow user to hover over pixel to see direction and strength -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="angle_color_canv" style='width:50vw;height:50vh'></canvas>
     <canvas id="full_edge_overlay_canvas" style='width:100%;height:100%'></canvas>
@@ -73,7 +86,8 @@ canvas {position:absolute; left:1px; top:1px;}
     </script>
 </div>
 
-<!-- split angles -->
+<!--split image into 4, showing edges in 4 different directions. Layer one on
+    top of each other to allow user to see how they stack together -->
 <div class="canvas-container" style="width: 80vw; height: 80vh; position: relative; -webkit-user-select: none;">
 <canvas id="black_canvas" style='width:100%;height:100%'></canvas>
     <div class="canvas-container" style='width:50%;height:50%; position:relative;left:25%;top:25%;'>
@@ -88,6 +102,8 @@ canvas {position:absolute; left:1px; top:1px;}
     </div>
 </div>
 
+<!--split thinned image into 4, and layer each on top of each other.
+    allow user to click on canvas to move a layer to one side -->
 <div class="canvas-container" style="width: 80vw; height: 80vh; position: relative; -webkit-user-select: none;">
 <canvas id="black_canvas2" style='width:100%;height:100%'></canvas>
     <div class="canvas-container" style='width:50%;height:50%; position:relative;left:25%;top:25%;'>
@@ -102,10 +118,12 @@ canvas {position:absolute; left:1px; top:1px;}
     </div>
 </div>
 
+<!--show thinned edges image. B&W -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="full_magnitude_thin_canv" style='width:50vw;height:50vh'></canvas>
 </div>
 
+<!--two sliders to control strong and weak edge thresholds -->
 <div id="threshold_input_holder">
     <div id="strong_threshold_holder">
         <input id="strong_threshold_slider" type="range" min=1 max=255 value=63
@@ -121,15 +139,18 @@ canvas {position:absolute; left:1px; top:1px;}
     </div>
 </div>
 
+<!-- image showing strong and weak edges. Weak edges are colored-->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="strong_threshold_canv" style='width:50vw;height:50vh'></canvas>
 </div>
+<!--final image showing found edges including tracked edges -->
 <div class="canvas-container" style="width: 50vw; height: 50vh; position: relative; -webkit-user-select: none;">
     <canvas id="tracked_edges_canv" style='width:50vw;height:50vh'></canvas>
 </div>
 
 
 
+<!--load image manipulation libraries-->
 <script src="Colorwheel.js"></script>
 <script src="Canny.js"></script>
 <script src="CanvImg.js"></script>
